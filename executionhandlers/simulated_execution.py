@@ -3,6 +3,7 @@ from executionhandlers.execution import ExecutionHandler
 from events.fill_event import FillEvent
 from events.order_event import OrderEvent
 
+
 class SimulatedExecutionHandler(ExecutionHandler):
     """
     The simulated execution handler simply converts all order
