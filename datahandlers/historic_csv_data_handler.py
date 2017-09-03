@@ -1,10 +1,11 @@
 import os
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import pandas.io.parsers
-import datetime
-from datahandlers.data_handler import DataHandler
 from events.market_event import MarketEvent
+
+from datahandlers.data_handler import DataHandler
 
 
 class HistoricCSVDataHandler(DataHandler):
@@ -51,9 +52,10 @@ class HistoricCSVDataHandler(DataHandler):
             # Load the CSV file with no header information, indexed on date
             self.symbol_data[s] = pd.io.parsers.read_csv(
                 os.path.join(self.csv_dir, '%s.csv' % s),
-                header=0, index_col=0, parse_dates=True,
-                names=['datetime','open','high','low','close','volume','adj_close']
-            ).sort()
+                header=2, index_col=0, parse_dates=True, delimiter=';',
+                names=['datetime', 'open_bid', 'open_ask', 'high_bid', 'high_ask', 'low_bid', 'low_ask', 'close_bid',
+                       'closed_ask', 'volume']
+            ).sort_index()
 
             # Combine the index to pad forward values
             if comb_index is None:
@@ -74,8 +76,7 @@ class HistoricCSVDataHandler(DataHandler):
         (sybmbol, datetime, open, low, high, close, volume).
         """
         for b in self.symbol_data[symbol]:
-            yield tuple([symbol, datetime.datetime.strptime(b[0], '%Y-%m-%d %H:%M:%S'),
-                         b[1][0], b[1][1], b[1][2], b[1][3], b[1][4]])
+            yield b
 
     def get_latest_bar(self, symbol):
         """

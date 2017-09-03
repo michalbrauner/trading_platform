@@ -1,4 +1,4 @@
-from events.event import Event
+from events import Event
 
 
 class MarketEvent(Event):

@@ -1,7 +1,8 @@
 import datetime
+
 from executionhandlers.execution import ExecutionHandler
+
 from events.fill_event import FillEvent
-from events.order_event import OrderEvent
 
 
 class SimulatedExecutionHandler(ExecutionHandler):

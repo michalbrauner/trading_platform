@@ -1,10 +1,4 @@
-import datetime
-import os, os.path
-import pandas as pd
-
 from abc import ABCMeta, abstractmethod
-
-from events.market_event import MarketEvent
 
 
 class DataHandler(object):

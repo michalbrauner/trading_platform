@@ -1,16 +1,11 @@
 from __future__ import print_function
+
 from abc import ABCMeta, abstractmethod
-import datetime
 
 try:
     import Queue as queue
 except ImportError:
     import queue
-
-import numpy as np
-import pandas as pd
-
-from events.signal_event import SignalEvent
 
 
 class Strategy(object):
@@ -27,7 +22,7 @@ class Strategy(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def calculate_signals(self):
+    def calculate_signals(self, event):
         """
         Provides the mechanisms to calculate the list of signals.
         """

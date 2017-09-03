@@ -1,0 +1,37 @@
+---
+title: "Equity analyze"
+output: equity_analyze_in_r
+---
+
+```{r}
+library(ggplot2)
+
+e <- read.csv('equity.csv', sep = ',')
+
+```
+```{r}
+?aes
+```
+
+```{r}
+colors()
+```
+
+```{r}
+e$datetime <- as.POSIXct(strptime(e$datetime, '%Y-%m-%d %H:%M:%S'))
+```
+
+```{r}
+ggplot(aes(x = datetime, y = equity_curve), data = e) +
+  geom_line() +
+  geom_smooth(method = 'lm') +
+  geom_smooth(color = 'red')
+```
+
+```{r}
+ggplot(aes(x = datetime, y = drawdown), data = e) +
+  geom_line() +
+  geom_smooth(method = 'lm') +
+  geom_smooth(color = 'red')
+```
+
