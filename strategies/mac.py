@@ -4,7 +4,7 @@ import datetime
 
 import numpy as np
 
-from events import SignalEvent
+from events.signal_event import SignalEvent
 from strategy import Strategy
 
 

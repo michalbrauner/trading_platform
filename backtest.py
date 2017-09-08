@@ -1,6 +1,6 @@
 import datetime
 import getopt
-import sys
+import sys, os, re
 
 from core.portfolio import Portfolio
 
@@ -11,7 +11,12 @@ from strategies.mac import MovingAverageCrossStrategy
 
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
+REG_SYMBOLS_SEPARATED_BY_COMA = r'^([a-zA-Z]{6})([,]{1}[a-zA-Z]{6})*$'
+REG_NUMBER = r'^[0-9]+$'
 
+REG_DATETIME_DATE_PART = r'[0-9]{4}[-]{1}[0-9]{2}[-]{1}[0-9]{2}'
+REG_DATETIME_TIME_PART = r'[0-9]{2}[:]{1}[0-9]{2}[:]{1}[0-9]{2}'
+REG_DATETIME = r'^{}T{}$'.format(REG_DATETIME_DATE_PART, REG_DATETIME_TIME_PART)
 
 def print_usage():
     print('Usage: python backtest.py -d <data_directory> -s <symbols> -c <initial_capital_usd> -b <start_datetime>'
@@ -43,7 +48,7 @@ def get_settings(argv):
         elif opt == '-c':
             settings['initial_capital_usd'] = arg
         elif opt == '-b':
-            settings['start_date'] = datetime.datetime.strptime(arg, DATETIME_FORMAT)
+            settings['start_date'] = arg
         elif opt == '-o':
             settings['output_directory'] = arg
 
@@ -55,18 +60,34 @@ def get_settings(argv):
 def validate_settings(settings):
     if settings['data_directory'] is None:
         raise Exception('Missing values - data_directory is required')
+    elif os.path.isdir(settings['data_directory']) is False:
+        raise Exception('data_directory doesn\'t exist')
 
     if settings['symbols'] is None:
         raise Exception('Missing values - symbols is required')
+    elif re.match(REG_SYMBOLS_SEPARATED_BY_COMA, settings['symbols']) is None:
+        raise Exception('symbols needs to be list of symbols separated by coma')
+    else:
+        settings['symbols'] = settings['symbols'].split(',')
 
     if settings['initial_capital_usd'] is None:
         raise Exception('Missing values - initial_capital_usd is required')
+    elif re.match(REG_NUMBER, settings['initial_capital_usd']) is None:
+        raise Exception('initial_capital_usd needs to be a number')
+    else:
+        settings['initial_capital_usd'] = int(settings['initial_capital_usd'])
 
     if settings['start_date'] is None:
         raise Exception('Missing values - start_date is required')
+    elif re.match(REG_DATETIME, settings['start_date']) is None:
+        raise Exception('start_date needs to be in \'yyyy-mm-ddThh:mm:ss\' format')
+    else:
+        settings['start_date'] = datetime.datetime.strptime(settings['start_date'], DATETIME_FORMAT)
 
     if settings['output_directory'] is None:
         raise Exception('Missing value - output_directory is required')
+    elif os.path.isdir(settings['output_directory']) is False:
+        raise Exception('output_directory doesn\'t exist')
 
 
 CSV_DIR = 'd:\\forex_backtesting\\backtest_data\\M15\\test_month\\'
@@ -74,19 +95,17 @@ CSV_DIR = 'd:\\forex_backtesting\\backtest_data\\M15\\test_month\\'
 
 def main(argv):
 
-    # settings = get_settings(argv)
+    settings = get_settings(argv)
 
-    symbols = ['eurusd']
-    initial_capital_usd = 10000
     heartbeat = 0
-    start_date = datetime.datetime(2017, 6, 1, 0, 0, 0)
 
     backtest = Backtest(
-        CSV_DIR,
-        symbols,
-        initial_capital_usd,
+        settings['data_directory'],
+        settings['output_directory'],
+        settings['symbols'],
+        settings['initial_capital_usd'],
         heartbeat,
-        start_date,
+        settings['start_date'],
         HistoricCSVDataHandler,
         SimulatedExecutionHandler,
         Portfolio,

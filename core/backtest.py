@@ -15,7 +15,7 @@ class Backtest(object):
     an event-driven backtest.
     """
     def __init__(
-            self, csv_dir, symbol_list, initial_capital,
+            self, csv_dir, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, data_handler,
             execution_handler, portfolio, strategy
     ):
@@ -24,6 +24,7 @@ class Backtest(object):
 
         Parameters:
         csv_dir - The hard root to the CSV data directory.
+        output_directory - The hard root to the directory where the output will be saved.
         symbol_list - The list of symbol strings.
         intial_capital - The starting capital for the portfolio.
         heartbeat - Backtest "heartbeat" in seconds
@@ -34,6 +35,7 @@ class Backtest(object):
         strategy - (Class) Generates signals based on market data.
         """
         self.csv_dir = csv_dir
+        self.output_directory = output_directory
         self.symbol_list = symbol_list
         self.initial_capital = initial_capital
         self.heartbeat = heartbeat
@@ -60,9 +62,8 @@ class Backtest(object):
         self.data_handler = self.data_handler_cls(self.events, self.csv_dir,
                                                   self.symbol_list)
         self.strategy = self.strategy_cls(self.data_handler, self.events)
-        self.portfolio = self.portfolio_cls(self.data_handler, self.events,
-                                            self.start_date,
-                                            self.initial_capital)
+        self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
+                                            self.output_directory)
         self.execution_handler = self.execution_handler_cls(self.events)
 
     def _run_backtest(self):

@@ -18,6 +18,7 @@ def main():
 
     backtest = Backtest(
         CSV_DIR,
+        '.',
         symbols,
         initial_capital_usd,
         heartbeat,

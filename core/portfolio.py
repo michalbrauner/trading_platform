@@ -5,6 +5,7 @@ try:
 except ImportError:
     import queue
 
+import os
 import pandas as pd
 from events.order_event import OrderEvent
 from perfomance import create_sharpe_ratio, create_drawdowns
@@ -24,7 +25,7 @@ class Portfolio(object):
     time-index, as well as the percentage change in
     portfolio total across bars.
     """
-    def __init__(self, bars, events, start_date, initial_capital=100000.0):
+    def __init__(self, bars, events, start_date, initial_capital, output_directory):
         """
         Initialises the portfolio with bars and an event queue.
         Also includes a starting datetime index and initial capital
@@ -40,6 +41,7 @@ class Portfolio(object):
         self.symbol_list = self.bars.symbol_list
         self.start_date = start_date
         self.initial_capital = initial_capital
+        self.output_directory = output_directory
         self.all_positions = self.construct_all_positions()
         self.current_positions = dict( (k,v) for k, v in \
                                        [(s, 0) for s in self.symbol_list] )
@@ -241,6 +243,6 @@ class Portfolio(object):
                  ("Max Drawdown", "%0.2f%%" % (max_dd * 100.0)),
                  ("Drawdown Duration", "%d" % dd_duration)]
 
-        self.equity_curve.to_csv('equity.csv')
+        self.equity_curve.to_csv(os.path.join(self.output_directory, 'equity.csv'))
 
         return stats
