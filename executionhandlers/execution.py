@@ -20,6 +20,9 @@ class ExecutionHandler(object):
     """
     __metaclass__ = ABCMeta
 
+    def __init__(self, event_logger):
+        self.event_logger = event_logger
+
     @abstractmethod
     def execute_order(self, event):
         """

@@ -8,8 +8,8 @@ from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from strategies.mac import MovingAverageCrossStrategy
-from positionsizehandlers.fixed_position_size import FixedPositionSize
-
+from positionsizehandlers.percentagerisk_position_size import PercentageRiskPositionSize
+from loggers.text_logger import TextLogger
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 REG_SYMBOLS_SEPARATED_BY_COMA = r'^([a-zA-Z]{6})([,]{1}[a-zA-Z]{6})*$'
@@ -100,6 +100,8 @@ def main(argv):
 
     heartbeat = 0
 
+    events_log_file = '{}/events.log'.format(settings['output_directory'])
+
     backtest = Backtest(
         settings['data_directory'],
         settings['output_directory'],
@@ -111,7 +113,9 @@ def main(argv):
         SimulatedExecutionHandler,
         Portfolio,
         MovingAverageCrossStrategy,
-        FixedPositionSize(0.5)
+        PercentageRiskPositionSize(3),
+        TextLogger(events_log_file),
+        [Backtest.LOG_TYPE_EVENTS]
     )
 
     backtest.simulate_trading()

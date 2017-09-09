@@ -7,5 +7,5 @@ class PositionSizeHandler(object):
     LOT_SIZE = 100000
 
     @abstractmethod
-    def get_position_size(self):
+    def get_position_size(self, current_holdings, current_positions):
         raise NotImplementedError("Should implement get_position_size()")

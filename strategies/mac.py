@@ -15,7 +15,7 @@ class MovingAverageCrossStrategy(Strategy):
     windows are 100/400 periods respectively.
     """
     def __init__(
-            self, bars, events, short_window=100, long_window=400
+            self, bars, events, short_window=25, long_window=50
     ):
         """
         Initialises the Moving Average Cross Strategy.
@@ -72,7 +72,7 @@ class MovingAverageCrossStrategy(Strategy):
                         print('LONG: %s' % bar_date)
                         sig_dir = 'LONG'
 
-                        signal = SignalEvent(1, symbol, dt, sig_dir, 1.0)
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
                         self.events.put(signal)
                         self.bought[s] = 'LONG'
 
@@ -80,6 +80,6 @@ class MovingAverageCrossStrategy(Strategy):
                         print("SHORT: %s" % bar_date)
                         sig_dir = 'EXIT'
 
-                        signal = SignalEvent(1, symbol, dt, sig_dir, 1.0)
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
                         self.events.put(signal)
                         self.bought[s] = 'OUT'

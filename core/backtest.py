@@ -14,10 +14,13 @@ class Backtest(object):
     Enscapsulates the settings and components for carrying out
     an event-driven backtest.
     """
+
+    LOG_TYPE_EVENTS = 'events'
+
     def __init__(
             self, csv_dir, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, data_handler,
-            execution_handler, portfolio, strategy, position_size_handler
+            execution_handler, portfolio, strategy, position_size_handler, logger, enabled_logs
     ):
         """
         Initialises the backtest.
@@ -46,6 +49,8 @@ class Backtest(object):
         self.portfolio_cls = portfolio
         self.strategy_cls = strategy
         self.position_size_handler = position_size_handler
+        self.logger = logger
+        self.enabled_log_types = enabled_logs
         self.events = queue.Queue()
         self.signals = 0
         self.orders = 0
@@ -72,6 +77,10 @@ class Backtest(object):
         """
         Executes the backtest.
         """
+
+        if self.logger is not None:
+            self.logger.open()
+
         i = 0
         while True:
             i += 1
@@ -104,7 +113,19 @@ class Backtest(object):
                             self.fills += 1
                             self.portfolio.update_fill(event)
 
+                    self.log_event_if_enabled(event)
+
             time.sleep(self.heartbeat)
+
+        if self.logger is not None:
+            self.logger.close()
+
+    def log_event_if_enabled(self, event):
+        if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
+            log = event.get_as_string()
+
+            if log != '':
+                self.logger.write(log)
 
     def _output_performance(self):
         """

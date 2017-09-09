@@ -12,3 +12,6 @@ class MarketEvent(Event):
         Initialises the MarketEvent.
         """
         self.type = 'MARKET'
+
+    def get_as_string(self):
+        return ''

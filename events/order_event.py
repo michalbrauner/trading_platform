@@ -28,9 +28,9 @@ class OrderEvent(Event):
         self.quantity = quantity
         self.direction = direction
 
-    def print_order(self):
+    def get_as_string(self):
         """
-        Outputs the values within the Order.
+        Return this order as a string
         """
-        print("Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s" % \
-              (self.symbol, self.order_type, self.quantity, self.direction))
+        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s' % \
+              (self.symbol, self.order_type, self.quantity, self.direction)

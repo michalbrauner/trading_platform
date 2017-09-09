@@ -32,11 +32,19 @@ class FillEvent(Event):
         self.exchange = exchange
         self.quantity = quantity
         self.direction = direction
-        self.fill_cost = fill_cost
 
         # Calculate commission
         if commission is None:
             self.commission = 0
         else:
             self.commission = commission
+
+        if fill_cost is None:
+            self.fill_cost = 0
+        else:
+            self.fill_cost = fill_cost
+
+    def get_as_string(self):
+        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s, FillCost: %f' % \
+               (self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost)
 

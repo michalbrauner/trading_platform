@@ -12,6 +12,7 @@ from perfomance import create_sharpe_ratio, create_drawdowns
 
 
 class Portfolio(object):
+
     """
     The Portfolio class handles the positions and market
     value of all instruments at a resolution of a "bar",
@@ -143,7 +144,7 @@ class Portfolio(object):
             fill_dir = -1
 
         # Update positions list with new quantities
-        self.current_positions[fill.symbol] += fill_dir*fill.quantity
+        self.current_positions[fill.symbol] += fill_dir * fill.quantity
 
     def update_holdings_from_fill(self, fill):
         """
@@ -192,7 +193,7 @@ class Portfolio(object):
         symbol = signal.symbol
         direction = signal.signal_type
         strength = signal.strength
-        mkt_quantity = self.position_size_handler.get_position_size()
+        mkt_quantity = self.position_size_handler.get_position_size(self.current_holdings, self.current_positions)
         cur_quantity = self.current_positions[symbol]
         order_type = 'MKT'
 
