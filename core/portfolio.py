@@ -25,7 +25,7 @@ class Portfolio(object):
     time-index, as well as the percentage change in
     portfolio total across bars.
     """
-    def __init__(self, bars, events, start_date, initial_capital, output_directory):
+    def __init__(self, bars, events, start_date, initial_capital, output_directory, position_size_handler):
         """
         Initialises the portfolio with bars and an event queue.
         Also includes a starting datetime index and initial capital
@@ -35,6 +35,7 @@ class Portfolio(object):
         events - The Event Queue object.
         start_date - The start date (bar) of the portfolio.
         initial_capital - The starting capital in USD.
+        position_size_handler - Calculate position size for new order
         """
         self.bars = bars
         self.events = events
@@ -42,6 +43,8 @@ class Portfolio(object):
         self.start_date = start_date
         self.initial_capital = initial_capital
         self.output_directory = output_directory
+        self.position_size_handler = position_size_handler
+
         self.all_positions = self.construct_all_positions()
         self.current_positions = dict( (k,v) for k, v in \
                                        [(s, 0) for s in self.symbol_list] )
@@ -189,7 +192,7 @@ class Portfolio(object):
         symbol = signal.symbol
         direction = signal.signal_type
         strength = signal.strength
-        mkt_quantity = 100
+        mkt_quantity = self.position_size_handler.get_position_size()
         cur_quantity = self.current_positions[symbol]
         order_type = 'MKT'
 

@@ -17,7 +17,7 @@ class Backtest(object):
     def __init__(
             self, csv_dir, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, data_handler,
-            execution_handler, portfolio, strategy
+            execution_handler, portfolio, strategy, position_size_handler
     ):
         """
         Initialises the backtest.
@@ -33,6 +33,7 @@ class Backtest(object):
         execution_handler - (Class) Handles the orders/fills for trades.
         portfolio - (Class) Keeps track of portfolio current and prior positions.
         strategy - (Class) Generates signals based on market data.
+        position_size_handler - (Class) Calculate position size for an order.
         """
         self.csv_dir = csv_dir
         self.output_directory = output_directory
@@ -44,6 +45,7 @@ class Backtest(object):
         self.execution_handler_cls = execution_handler
         self.portfolio_cls = portfolio
         self.strategy_cls = strategy
+        self.position_size_handler = position_size_handler
         self.events = queue.Queue()
         self.signals = 0
         self.orders = 0
@@ -63,7 +65,7 @@ class Backtest(object):
                                                   self.symbol_list)
         self.strategy = self.strategy_cls(self.data_handler, self.events)
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory)
+                                            self.output_directory, self.position_size_handler)
         self.execution_handler = self.execution_handler_cls(self.events)
 
     def _run_backtest(self):
