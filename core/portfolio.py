@@ -198,10 +198,10 @@ class Portfolio(object):
         order_type = 'MKT'
 
         if direction == 'LONG' and cur_quantity == 0:
-            order = OrderEvent(symbol, order_type, mkt_quantity, 'BUY')
+            order = OrderEvent(symbol, order_type, mkt_quantity, 'BUY', signal.stop_loss, signal.take_profit)
 
         if direction == 'SHORT' and cur_quantity == 0:
-            order = OrderEvent(symbol, order_type, mkt_quantity, 'SELL')
+            order = OrderEvent(symbol, order_type, mkt_quantity, 'SELL', signal.stop_loss, signal.take_profit)
 
         if direction == 'EXIT' and cur_quantity > 0:
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'SELL')

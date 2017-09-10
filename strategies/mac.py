@@ -63,7 +63,7 @@ class MovingAverageCrossStrategy(Strategy):
                     s, 'close_bid', N=self.long_window
                 )
                 bar_date = self.bars.get_latest_bar_datetime(s)
-                bar_price = self.bars.get_latest_bars_values(s, 'close_bid')
+                bar_price = self.bars.get_latest_bar_value(s, 'close_bid')
 
                 if bars is not None and bars != []:
                     short_sma = np.mean(bars[-self.short_window:])
@@ -77,11 +77,12 @@ class MovingAverageCrossStrategy(Strategy):
                         print('LONG: %s' % bar_date)
                         sig_dir = 'LONG'
 
-                        stop_loss = bar_price[0] - (self.stop_loss_pips * self.get_pip_value())
-                        take_profit = bar_price[0] + (self.take_profit_pips * self.get_pip_value())
+                        stop_loss = bar_price - (self.stop_loss_pips * self.get_pip_value())
+                        take_profit = bar_price + (self.take_profit_pips * self.get_pip_value())
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
                         self.events.put(signal)
+
                         self.bought[s] = 'LONG'
 
                     elif short_sma < long_sma and self.bought[s] == "LONG":

@@ -54,7 +54,7 @@ class HistoricCSVDataHandler(DataHandler):
                 os.path.join(self.csv_dir, '%s.csv' % s),
                 header=2, index_col=0, parse_dates=True, delimiter=';',
                 names=['datetime', 'open_bid', 'open_ask', 'high_bid', 'high_ask', 'low_bid', 'low_ask', 'close_bid',
-                       'closed_ask', 'volume']
+                       'close_ask', 'volume']
             ).sort_index()
 
             # Combine the index to pad forward values

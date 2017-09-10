@@ -1,7 +1,7 @@
 import datetime
 
 from executionhandlers.execution import ExecutionHandler
-
+from events.order_event import OrderEvent
 from events.fill_event import FillEvent
 
 
@@ -14,14 +14,17 @@ class SimulatedExecutionHandler(ExecutionHandler):
     before implementation with a more sophisticated execution
     handler.
     """
-    def __init__(self, events):
+    def __init__(self, bars, events):
         """
         Initialises the handler, setting the event queues
         up internally.
         Parameters:
+        bars
         events - The Queue of Event objects.
         """
+        self.bars = bars
         self.events = events
+        self.limit_and_stop_orders = list()
 
     def execute_order(self, event):
         """
@@ -31,8 +34,59 @@ class SimulatedExecutionHandler(ExecutionHandler):
         event - Contains an Event object with order information.
         """
         if event.type == 'ORDER':
-            fill_event = FillEvent(
-                datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
-                event.stop_loss, event.take_profit
-            )
-            self.events.put(fill_event)
+            if event.order_type == 'MKT':
+                fill_event = FillEvent(
+                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None
+                )
+                self.events.put(fill_event)
+
+                reversed_direction = self.get_reversed_direction(event.direction)
+
+                if event.stop_loss is not None:
+                    stop_loss_order = OrderEvent(event.symbol, 'STP', event.quantity, reversed_direction, None, None,
+                                       event.stop_loss)
+
+                    self.limit_and_stop_orders.append(stop_loss_order)
+
+                if event.take_profit is not None:
+                    take_profit_order = OrderEvent(event.symbol, 'LMT', event.quantity, reversed_direction, None, None,
+                                       event.take_profit)
+
+                    self.limit_and_stop_orders.append(take_profit_order)
+
+    def update_stop_and_limit_orders(self, market_event):
+        for order in self.limit_and_stop_orders:
+
+            price_bid = self.bars.get_latest_bar_value(order.symbol, 'close_bid')
+            price_ask = self.bars.get_latest_bar_value(order.symbol, 'close_ask')
+
+            if order.order_type == 'STP':
+                if order.direction == 'BUY' and price_ask >= order.price:
+                    order.order_type = 'MKT'
+                    order.price = None
+                    self.events.put(order)
+                    self.clear_limit_or_stop_orders(order.symbol)
+                elif order.direction == 'SELL' and price_bid <= order.price:
+                    order.order_type = 'MKT'
+                    order.price = None
+                    self.events.put(order)
+                    self.clear_limit_or_stop_orders(order.symbol)
+
+            elif order.order_type == 'LMT':
+                if order.direction == 'BUY':
+                    pass
+                elif order.direction == 'SELL':
+                    pass
+
+    def clear_limit_or_stop_orders(self, symbol):
+        for order in self.limit_and_stop_orders:
+            if order.symbol == symbol:
+                self.limit_and_stop_orders.remove(order)
+
+    def get_reversed_direction(self, direction):
+        if direction == 'BUY':
+            return 'SELL'
+        elif direction == 'SELL':
+            return 'BUY'
+        else:
+            return ''

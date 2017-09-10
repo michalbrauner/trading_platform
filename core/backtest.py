@@ -71,7 +71,7 @@ class Backtest(object):
         self.strategy = self.strategy_cls(self.data_handler, self.events)
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
                                             self.output_directory, self.position_size_handler)
-        self.execution_handler = self.execution_handler_cls(self.events)
+        self.execution_handler = self.execution_handler_cls(self.data_handler, self.events)
 
     def _run_backtest(self):
         """
@@ -102,6 +102,7 @@ class Backtest(object):
                     if event is not None:
                         if event.type == 'MARKET':
                             self.strategy.calculate_signals(event)
+                            self.execution_handler.update_stop_and_limit_orders(event)
                             self.portfolio.update_timeindex(event)
                         elif event.type == 'SIGNAL':
                             self.signals += 1
