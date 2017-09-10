@@ -7,7 +7,8 @@ class SignalEvent(Event):
     This is received by a Portfolio object and acted upon.
     """
 
-    def __init__(self, strategy_id, symbol, bar_datetime, datetime, signal_type, strength):
+    def __init__(self, strategy_id, symbol, bar_datetime, datetime, signal_type, strength, stop_loss=None,
+                 take_profit=None):
         """
         Initialises the SignalEvent.
 
@@ -19,6 +20,8 @@ class SignalEvent(Event):
         signal_type - 'LONG' or 'SHORT'.
         strength - An adjustment factor "suggestion" used to scale quantity at the portfolio level.
             Useful for pairs strategies.
+        stop_loss - The price where the order is closed at market automatically with loss.
+        take_profit - The price where the order is closed at market automatically with profit.
         """
 
         self.type = 'SIGNAL'
@@ -28,7 +31,17 @@ class SignalEvent(Event):
         self.datetime = datetime
         self.signal_type = signal_type
         self.strength = strength
+        self.stop_loss = stop_loss
+        self.take_profit = take_profit
 
     def get_as_string(self):
-        return 'Signal: StrategyId: %d, Symbol: %s, BarDatetime: %s, Datetime: %s, SignalType: %s, Strength: %d' % \
-            (self.strategy_id, self.symbol, self.bar_datetime, self.datetime, self.signal_type, self.strength)
+        return ('Signal: StrategyId: %d, Symbol: %s, BarDatetime: %s, Datetime: %s, SignalType: %s, Strength: %d,' +
+                ' StopLoss=%f, TakeProfit=%f') % \
+            (self.strategy_id, self.symbol, self.bar_datetime, self.datetime, self.signal_type, self.strength,
+             self.get_zero_if_none_or_value(self.stop_loss), self.get_zero_if_none_or_value(self.take_profit))
+
+    def get_zero_if_none_or_value(self, value):
+        if value is None:
+            return 0
+        else:
+            return value

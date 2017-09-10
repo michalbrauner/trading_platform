@@ -15,7 +15,7 @@ class MovingAverageCrossStrategy(Strategy):
     windows are 100/400 periods respectively.
     """
     def __init__(
-            self, bars, events, short_window=25, long_window=50
+            self, bars, events, short_window=25, long_window=50, stop_loss_pips=100, take_profit_pips=200
     ):
         """
         Initialises the Moving Average Cross Strategy.
@@ -24,12 +24,16 @@ class MovingAverageCrossStrategy(Strategy):
         events - The Event Queue object.
         short_window - The short moving average lookback.
         long_window - The long moving average lookback.
+        stop_loss_pips
+        take_profit_pips
         """
         self.bars = bars
         self.symbol_list = self.bars.symbol_list
         self.events = events
         self.short_window = short_window
         self.long_window = long_window
+        self.stop_loss_pips = stop_loss_pips
+        self.take_profit_pips = take_profit_pips
 
         # Set to True if a symbol is in the market
         self.bought = self._calculate_initial_bought()
@@ -59,6 +63,7 @@ class MovingAverageCrossStrategy(Strategy):
                     s, 'close_bid', N=self.long_window
                 )
                 bar_date = self.bars.get_latest_bar_datetime(s)
+                bar_price = self.bars.get_latest_bars_values(s, 'close_bid')
 
                 if bars is not None and bars != []:
                     short_sma = np.mean(bars[-self.short_window:])
@@ -72,7 +77,10 @@ class MovingAverageCrossStrategy(Strategy):
                         print('LONG: %s' % bar_date)
                         sig_dir = 'LONG'
 
-                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
+                        stop_loss = bar_price[0] - (self.stop_loss_pips * self.get_pip_value())
+                        take_profit = bar_price[0] + (self.take_profit_pips * self.get_pip_value())
+
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
                         self.events.put(signal)
                         self.bought[s] = 'LONG'
 
@@ -83,3 +91,6 @@ class MovingAverageCrossStrategy(Strategy):
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
                         self.events.put(signal)
                         self.bought[s] = 'OUT'
+
+    def get_pip_value(self):
+        return 0.00001

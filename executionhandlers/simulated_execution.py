@@ -32,6 +32,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         """
         if event.type == 'ORDER':
             fill_event = FillEvent(
-                datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None
+                datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
+                event.stop_loss, event.take_profit
             )
             self.events.put(fill_event)
