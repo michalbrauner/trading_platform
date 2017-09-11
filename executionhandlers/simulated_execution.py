@@ -3,6 +3,8 @@ import datetime
 from executionhandlers.execution import ExecutionHandler
 from events.order_event import OrderEvent
 from events.fill_event import FillEvent
+from events.close_pending_orders_event import ClosePendingOrdersEvent
+import copy
 
 
 class SimulatedExecutionHandler(ExecutionHandler):
@@ -61,16 +63,14 @@ class SimulatedExecutionHandler(ExecutionHandler):
             price_ask = self.bars.get_latest_bar_value(order.symbol, 'close_ask')
 
             if order.order_type == 'STP':
-                if order.direction == 'BUY' and price_ask >= order.price:
-                    order.order_type = 'MKT'
-                    order.price = None
-                    self.events.put(order)
-                    self.clear_limit_or_stop_orders(order.symbol)
-                elif order.direction == 'SELL' and price_bid <= order.price:
-                    order.order_type = 'MKT'
-                    order.price = None
-                    self.events.put(order)
-                    self.clear_limit_or_stop_orders(order.symbol)
+                if self.stop_order_should_be_filled(order, price_ask, price_bid):
+                    new_order = copy.copy(order)
+                    new_order.order_type = 'MKT'
+                    new_order.price = None
+                    self.events.put(new_order)
+
+                    close_pending_orders_event = ClosePendingOrdersEvent(order.symbol)
+                    self.events.put(close_pending_orders_event)
 
             elif order.order_type == 'LMT':
                 if order.direction == 'BUY':
@@ -78,9 +78,13 @@ class SimulatedExecutionHandler(ExecutionHandler):
                 elif order.direction == 'SELL':
                     pass
 
-    def clear_limit_or_stop_orders(self, symbol):
+    def stop_order_should_be_filled(self, order, price_ask, price_bid):
+        return (order.direction == 'BUY' and price_ask >= order.price) or \
+        (order.direction == 'SELL' and price_bid <= order.price)
+
+    def clear_limit_or_stop_orders(self, close_pending_orders_event):
         for order in self.limit_and_stop_orders:
-            if order.symbol == symbol:
+            if order.symbol == close_pending_orders_event.symbol:
                 self.limit_and_stop_orders.remove(order)
 
     def get_reversed_direction(self, direction):

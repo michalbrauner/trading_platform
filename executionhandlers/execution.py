@@ -36,3 +36,10 @@ class ExecutionHandler(object):
         Takes an Market event and check if some of the stop or limit orders should be changed do market
         """
         raise NotImplementedError("Should implement update_stop_and_limit_orders()")
+
+    @abstractmethod
+    def clear_limit_or_stop_orders(self, close_pending_orders_event):
+        """
+        Takes an ClosePendingOrders event and clear pending orders
+        """
+        raise NotImplementedError("Should implement clear_limit_or_stop_orders()")
