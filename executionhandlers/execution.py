@@ -20,16 +20,26 @@ class ExecutionHandler(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, event_logger):
-        self.event_logger = event_logger
-
     @abstractmethod
     def execute_order(self, event):
         """
         Takes an Order event and executes it, producing
         a Fill event that gets placed onto the Events queue.
-        151
         Parameters:
         event - Contains an Event object with order information.
         """
         raise NotImplementedError("Should implement execute_order()")
+
+    @abstractmethod
+    def update_stop_and_limit_orders(self, market_event):
+        """
+        Takes an Market event and check if some of the stop or limit orders should be changed do market
+        """
+        raise NotImplementedError("Should implement update_stop_and_limit_orders()")
+
+    @abstractmethod
+    def clear_limit_or_stop_orders(self, close_pending_orders_event):
+        """
+        Takes an ClosePendingOrders event and clear pending orders
+        """
+        raise NotImplementedError("Should implement clear_limit_or_stop_orders()")

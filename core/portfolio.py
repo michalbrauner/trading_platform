@@ -8,6 +8,7 @@ except ImportError:
 import os
 import pandas as pd
 from events.order_event import OrderEvent
+from events.close_pending_orders_event import ClosePendingOrdersEvent
 from perfomance import create_sharpe_ratio, create_drawdowns
 
 
@@ -198,10 +199,10 @@ class Portfolio(object):
         order_type = 'MKT'
 
         if direction == 'LONG' and cur_quantity == 0:
-            order = OrderEvent(symbol, order_type, mkt_quantity, 'BUY')
+            order = OrderEvent(symbol, order_type, mkt_quantity, 'BUY', signal.stop_loss, signal.take_profit)
 
         if direction == 'SHORT' and cur_quantity == 0:
-            order = OrderEvent(symbol, order_type, mkt_quantity, 'SELL')
+            order = OrderEvent(symbol, order_type, mkt_quantity, 'SELL', signal.stop_loss, signal.take_profit)
 
         if direction == 'EXIT' and cur_quantity > 0:
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'SELL')
@@ -218,7 +219,13 @@ class Portfolio(object):
         """
         if event.type == 'SIGNAL':
             order_event = self.generate_naive_order(event)
-            self.events.put(order_event)
+
+            if order_event is not None:
+                self.events.put(order_event)
+
+            if event.signal_type == 'EXIT':
+                close_pending_orders_event = ClosePendingOrdersEvent(event.symbol)
+                self.events.put(close_pending_orders_event)
 
     def create_equity_curve_dataframe(self):
         """

@@ -10,7 +10,7 @@ class FillEvent(Event):
     """
 
     def __init__(self, timeindex, symbol, exchange, quantity,
-                 direction, fill_cost, commission=None, stop_loss=None, take_profit=None):
+                 direction, fill_cost, commission=None):
         """
         Initialises the FillEvent object. Sets the symbol, exchange,
         quantity, direction, cost of fill and an optional
@@ -24,8 +24,6 @@ class FillEvent(Event):
         direction - The direction of fill ('BUY' or 'SELL')
         fill_cost - The holdings value in dollars.
         commission - An optional commission.
-        stop_loss - The price where the order is closed at market automatically with loss.
-        take_profit - The price where the order is closed at market automatically with profit.
         """
 
         self.type = 'FILL'
@@ -45,18 +43,6 @@ class FillEvent(Event):
         else:
             self.fill_cost = fill_cost
 
-        if stop_loss is None:
-            self.stop_loss = 0
-        else:
-            self.stop_loss = stop_loss
-
-        if take_profit is None:
-            self.take_profit = 0
-        else:
-            self.take_profit = take_profit
-
     def get_as_string(self):
-        return ('Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, ' +
-                'StopLoss=%f, TakeProfit=%f') % \
-               (self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,
-                self.stop_loss, self.take_profit)
+        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f' % \
+               (self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost)

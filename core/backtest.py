@@ -68,10 +68,10 @@ class Backtest(object):
         )
         self.data_handler = self.data_handler_cls(self.events, self.csv_dir,
                                                   self.symbol_list)
-        self.strategy = self.strategy_cls(self.data_handler, self.events)
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
                                             self.output_directory, self.position_size_handler)
-        self.execution_handler = self.execution_handler_cls(self.events)
+        self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events)
+        self.execution_handler = self.execution_handler_cls(self.data_handler, self.events)
 
     def _run_backtest(self):
         """
@@ -100,8 +100,11 @@ class Backtest(object):
                     break
                 else:
                     if event is not None:
-                        if event.type == 'MARKET':
+                        if event.type == 'CLOSE_PENDING_ORDERS':
+                            self.execution_handler.clear_limit_or_stop_orders(event)
+                        elif event.type == 'MARKET':
                             self.strategy.calculate_signals(event)
+                            self.execution_handler.update_stop_and_limit_orders(event)
                             self.portfolio.update_timeindex(event)
                         elif event.type == 'SIGNAL':
                             self.signals += 1
@@ -113,19 +116,25 @@ class Backtest(object):
                             self.fills += 1
                             self.portfolio.update_fill(event)
 
-                    self.log_event_if_enabled(event)
+                    self.log_event(i, event)
 
             time.sleep(self.heartbeat)
 
         if self.logger is not None:
             self.logger.close()
 
-    def log_event_if_enabled(self, event):
-        if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
-            log = event.get_as_string()
+    def log_message(self, iteration, message):
+        if self.logger is not None and message != '':
+            self.logger.write('#%d - %s' % (iteration, message))
 
-            if log != '':
-                self.logger.write(log)
+    def log_event(self, iteration, event):
+        if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
+            if event is not None:
+                log = event.get_as_string()
+            else:
+                log = 'Event: None'
+
+            self.log_message(iteration, log)
 
     def _output_performance(self):
         """
