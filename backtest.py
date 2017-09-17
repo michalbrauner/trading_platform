@@ -8,7 +8,7 @@ from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from strategies.mac import MovingAverageCrossStrategy
-from positionsizehandlers.percentagerisk_position_size import PercentageRiskPositionSize
+from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -21,7 +21,7 @@ REG_DATETIME = r'^{}T{}$'.format(REG_DATETIME_DATE_PART, REG_DATETIME_TIME_PART)
 
 def print_usage():
     print('Usage: python backtest.py -d <data_directory> -s <symbols> -c <initial_capital_usd> -b <start_datetime>'
-          + ' -o <output_directory> -l <leverage>')
+          + ' -o <output_directory>')
     print('  -> list of symbols separated by coma')
     print('  -> start_datetime is in \'yyyy-mm-ddThh:mm:ss\' format')
 
@@ -113,7 +113,7 @@ def main(argv):
         SimulatedExecutionHandler,
         Portfolio,
         MovingAverageCrossStrategy,
-        PercentageRiskPositionSize(3),
+        FixedPositionSize(0.5),
         TextLogger(events_log_file),
         [Backtest.LOG_TYPE_EVENTS]
     )
