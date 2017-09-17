@@ -67,6 +67,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
                     new_order = copy.copy(order)
                     new_order.order_type = 'MKT'
                     new_order.price = None
+                    new_order.note = 'StopLoss hit at price Ask={}, Bid={}'.format(price_ask, price_bid)
                     self.events.put(new_order)
 
                     close_pending_orders_event = ClosePendingOrdersEvent(order.symbol)
@@ -83,9 +84,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
         (order.direction == 'SELL' and price_bid <= order.price)
 
     def clear_limit_or_stop_orders(self, close_pending_orders_event):
-        for order in self.limit_and_stop_orders:
-            if order.symbol == close_pending_orders_event.symbol:
-                self.limit_and_stop_orders.remove(order)
+        self.limit_and_stop_orders = filter(lambda order_item: order_item.symbol != close_pending_orders_event.symbol,
+                                            self.limit_and_stop_orders)
 
     def get_reversed_direction(self, direction):
         if direction == 'BUY':

@@ -116,22 +116,25 @@ class Backtest(object):
                             self.fills += 1
                             self.portfolio.update_fill(event)
 
-                    self.log_event_if_enabled(i, event)
+                    self.log_event(i, event)
 
             time.sleep(self.heartbeat)
 
         if self.logger is not None:
             self.logger.close()
 
-    def log_event_if_enabled(self, iteration, event):
+    def log_message(self, iteration, message):
+        if self.logger is not None and message != '':
+            self.logger.write('#%d - %s' % (iteration, message))
+
+    def log_event(self, iteration, event):
         if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
             if event is not None:
                 log = event.get_as_string()
             else:
                 log = 'Event: None'
 
-            if log != '':
-                self.logger.write('#%d - %s' % (iteration, log))
+            self.log_message(iteration, log)
 
     def _output_performance(self):
         """

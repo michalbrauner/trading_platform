@@ -8,7 +8,8 @@ class OrderEvent(Event):
     quantity and a direction.
     """
 
-    def __init__(self, symbol, order_type, quantity, direction, stop_loss=None, take_profit=None, price=None):
+    def __init__(self, symbol, order_type, quantity, direction, stop_loss=None, take_profit=None, price=None,
+                 note=None):
         """
         Initialises the order type, setting whether it is
         a Market order ('MKT'), Limit order ('LMT') or Stop order ('STP'), has
@@ -23,6 +24,7 @@ class OrderEvent(Event):
         stop_loss - The price where the order is closed at market automatically with loss.
         take_profit - The price where the order is closed at market automatically with profit.
         price - The price for stop or limit orders
+        note
         """
 
         self.type = 'ORDER'
@@ -33,18 +35,21 @@ class OrderEvent(Event):
         self.stop_loss = stop_loss
         self.take_profit = take_profit
         self.price = price
+        self.note = note
 
     def get_as_string(self):
         """
         Return this order as a string
         """
-        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f' % \
+        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, Note=%s' % \
                (self.symbol, self.order_type, self.quantity, self.direction,
-                self.get_zero_if_none_or_value(self.stop_loss), self.get_zero_if_none_or_value(self.take_profit),
-                self.get_zero_if_none_or_value(self.price))
+                self.get_default_value_if_none_or_value(self.stop_loss, 0),
+                self.get_default_value_if_none_or_value(self.take_profit, 0),
+                self.get_default_value_if_none_or_value(self.price, 0),
+                self.get_default_value_if_none_or_value(self.note, ''))
 
-    def get_zero_if_none_or_value(self, value):
+    def get_default_value_if_none_or_value(self, value, default_value):
         if value is None:
-            return 0
+            return default_value
         else:
             return value
