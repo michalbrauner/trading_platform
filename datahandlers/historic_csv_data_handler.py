@@ -34,6 +34,7 @@ class HistoricCSVDataHandler(DataHandler):
         self.symbol_list = symbol_list
 
         self.symbol_data = {}
+        self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
 
@@ -57,6 +58,11 @@ class HistoricCSVDataHandler(DataHandler):
                        'close_ask', 'volume']
             ).sort_index()
 
+            self.symbol_position_info[s] = dict(
+                number_of_items = self.symbol_data[s].shape[0],
+                position = 0
+            )
+
             # Combine the index to pad forward values
             if comb_index is None:
                 comb_index = self.symbol_data[s].index
@@ -76,6 +82,7 @@ class HistoricCSVDataHandler(DataHandler):
         (sybmbol, datetime, open, low, high, close, volume).
         """
         for b in self.symbol_data[symbol]:
+            self.symbol_position_info[symbol]['position'] = self.symbol_position_info[symbol]['position'] + 1
             yield b
 
     def get_latest_bar(self, symbol):
@@ -156,3 +163,17 @@ class HistoricCSVDataHandler(DataHandler):
                     self.latest_symbol_data[s].append(bar)
 
         self.events.put(MarketEvent())
+
+    def get_position_in_percentage(self):
+        positions_in_percentage = list()
+
+        for s in self.symbol_list:
+            positions_in_percentage.append(self.get_position_in_percentage_for_symbol(s))
+
+        return np.round(np.mean(positions_in_percentage), 2)
+
+    def get_position_in_percentage_for_symbol(self, symbol):
+        position = float(self.symbol_position_info[symbol]['position'])
+        number_of_items = float(self.symbol_position_info[symbol]['number_of_items'])
+
+        return np.round(100 * (position / number_of_items), 2)

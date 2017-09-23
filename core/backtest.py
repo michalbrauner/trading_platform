@@ -1,5 +1,6 @@
 from __future__ import print_function
 import pprint
+import sys
 
 try:
     import Queue as queue
@@ -81,10 +82,12 @@ class Backtest(object):
         if self.logger is not None:
             self.logger.open()
 
+        self.write_progress()
+
         i = 0
         while True:
             i += 1
-            print(i)
+            self.write_progress()
 
             # Update the market bars
             if self.data_handler.continue_backtest:
@@ -120,6 +123,9 @@ class Backtest(object):
 
             time.sleep(self.heartbeat)
 
+        print('')
+        sys.stdout.flush()
+
         if self.logger is not None:
             self.logger.close()
 
@@ -136,6 +142,11 @@ class Backtest(object):
 
             self.log_message(iteration, log)
 
+    def write_progress(self):
+        progress = int(round(self.data_handler.get_position_in_percentage(), 0))
+        print('Running backtest ({}%)'.format(progress), end='\r')
+        sys.stdout.flush()
+
     def _output_performance(self):
         """
         Outputs the strategy performance from the backtest.
@@ -144,9 +155,6 @@ class Backtest(object):
 
         print("Creating summary stats...")
         stats = self.portfolio.output_summary_stats()
-
-        print("Creating equity curve...")
-        print(self.portfolio.equity_curve.tail(10))
 
         pprint.pprint(stats)
 
