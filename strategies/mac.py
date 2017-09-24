@@ -96,7 +96,32 @@ class MovingAverageCrossStrategy(Strategy):
 
                         self.bought[s] = 'LONG'
 
+                    elif short_sma < long_sma and self.bought[s] == 'OUT':
+                        sig_dir = 'SHORT'
+
+                        if self.stop_loss_pips is None:
+                            stop_loss = None
+                        else:
+                            stop_loss = bar_price + (self.stop_loss_pips * self.get_pip_value())
+
+                        if self.take_profit_pips is None:
+                            take_profit = None
+                        else:
+                            take_profit = bar_price - (self.take_profit_pips * self.get_pip_value())
+
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
+                        self.events.put(signal)
+
+                        self.bought[s] = 'SHORT'
+
                     elif short_sma < long_sma and self.bought[s] == "LONG":
+                        sig_dir = 'EXIT'
+
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
+                        self.events.put(signal)
+                        self.bought[s] = 'OUT'
+
+                    elif short_sma > long_sma and self.bought[s] == "SHORT":
                         sig_dir = 'EXIT'
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
