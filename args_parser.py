@@ -73,8 +73,8 @@ def validate_settings(settings):
         raise Exception('output_directory doesn\'t exist')
 
 
-def validate_settings_is_number_and_set_to_int(settings, settings_item):
-    if settings[settings_item] is None:
+def validate_settings_is_number_and_set_to_int(settings, settings_item, is_required=True):
+    if settings[settings_item] is None and is_required:
         raise Exception('Missing value - {} is required'.format(settings_item))
     elif re.match(REG_NUMBER, settings[settings_item]) is None:
         raise Exception('{} needs to be a number'.format(settings_item))

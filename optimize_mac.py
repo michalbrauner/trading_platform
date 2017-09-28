@@ -62,9 +62,6 @@ def get_settings(argv):
     return settings
 
 
-CSV_DIR = 'd:\\forex_backtesting\\backtest_data\\M15\\test_month\\'
-
-
 def main(argv):
 
     settings = get_settings(argv)

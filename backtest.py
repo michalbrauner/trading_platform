@@ -1,4 +1,5 @@
-import sys
+import sys, getopt
+from sys import settrace
 
 from core.portfolio import Portfolio
 
@@ -13,7 +14,7 @@ import args_parser
 
 def print_usage():
     print('Usage: python backtest.py -d <data_directory> -s <symbols> -c <initial_capital_usd> -b <start_datetime>'
-          + ' -o <output_directory>')
+          + ' -o <output_directory> --short_window=<int> --long_window=<int> --stop_loss=<int> --take_profit=<int>')
     print('  -> list of symbols separated by coma')
     print('  -> start_datetime is in \'yyyy-mm-ddThh:mm:ss\' format')
 
@@ -24,11 +25,33 @@ def get_settings(argv):
         print_usage()
         exit(1)
 
-    settings = args_parser.get_basic_settings(argv, [])
+    long_opts = ['short_window=', 'long_window=', 'stop_loss=', 'take_profit=']
+
+    settings = args_parser.get_basic_settings(argv, long_opts)
 
     if settings['print_help']:
         print_usage()
         exit(0)
+
+    settings['stop_loss'] = None
+    settings['take_profit'] = None
+
+    opts, args = getopt.getopt(argv, args_parser.BASIC_ARGS, long_opts)
+
+    for opt, arg in opts:
+        if opt == '--short_window':
+            settings['short_window'] = arg
+        elif opt == '--long_window':
+            settings['long_window'] = arg
+        elif opt == '--stop_loss':
+            settings['stop_loss'] = arg
+        elif opt == '--take_profit':
+            settings['take_profit'] = arg
+
+    args_parser.validate_settings_is_number_and_set_to_int(settings, 'short_window')
+    args_parser.validate_settings_is_number_and_set_to_int(settings, 'long_window')
+    args_parser.validate_settings_is_number_and_set_to_int(settings, 'stop_loss', False)
+    args_parser.validate_settings_is_number_and_set_to_int(settings, 'take_profit', False)
 
     return settings
 
@@ -44,6 +67,13 @@ def main(argv):
 
     events_log_file = '{}/events.log'.format(settings['output_directory'])
 
+    strategy_params = dict(
+        short_window=settings['short_window'],
+        long_window=settings['long_window'],
+        stop_loss_pips=settings['stop_loss'],
+        take_profit_pips=settings['take_profit']
+    )
+
     backtest = Backtest(
         settings['data_directory'],
         settings['output_directory'],
@@ -58,7 +88,7 @@ def main(argv):
         FixedPositionSize(0.5),
         TextLogger(events_log_file),
         [Backtest.LOG_TYPE_EVENTS],
-        dict(),
+        strategy_params,
         'equity.csv'
     )
 
