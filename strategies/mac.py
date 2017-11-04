@@ -15,7 +15,7 @@ class MovingAverageCrossStrategy(Strategy):
     windows are 100/400 periods respectively.
     """
     def __init__(
-            self, bars, portfolio, events, short_window=25, long_window=50, stop_loss_pips=100, take_profit_pips=200
+            self, bars, portfolio, events, short_window=3, long_window=45, stop_loss_pips=None, take_profit_pips=None
     ):
         """
         Initialises the Moving Average Cross Strategy.
@@ -79,19 +79,49 @@ class MovingAverageCrossStrategy(Strategy):
                     sig_dir = ''
 
                     if short_sma > long_sma and self.bought[s] == 'OUT':
-                        print('LONG: %s' % bar_date)
                         sig_dir = 'LONG'
 
-                        stop_loss = bar_price - (self.stop_loss_pips * self.get_pip_value())
-                        take_profit = bar_price + (self.take_profit_pips * self.get_pip_value())
+                        if self.stop_loss_pips is None:
+                            stop_loss = None
+                        else:
+                            stop_loss = bar_price - (self.stop_loss_pips * self.get_pip_value())
+
+                        if self.take_profit_pips is None:
+                            take_profit = None
+                        else:
+                            take_profit = bar_price + (self.take_profit_pips * self.get_pip_value())
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
                         self.events.put(signal)
 
                         self.bought[s] = 'LONG'
 
+                    elif short_sma < long_sma and self.bought[s] == 'OUT':
+                        sig_dir = 'SHORT'
+
+                        if self.stop_loss_pips is None:
+                            stop_loss = None
+                        else:
+                            stop_loss = bar_price + (self.stop_loss_pips * self.get_pip_value())
+
+                        if self.take_profit_pips is None:
+                            take_profit = None
+                        else:
+                            take_profit = bar_price - (self.take_profit_pips * self.get_pip_value())
+
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
+                        self.events.put(signal)
+
+                        self.bought[s] = 'SHORT'
+
                     elif short_sma < long_sma and self.bought[s] == "LONG":
-                        print("SHORT: %s" % bar_date)
+                        sig_dir = 'EXIT'
+
+                        signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
+                        self.events.put(signal)
+                        self.bought[s] = 'OUT'
+
+                    elif short_sma > long_sma and self.bought[s] == "SHORT":
                         sig_dir = 'EXIT'
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)

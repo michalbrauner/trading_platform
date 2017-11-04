@@ -10,7 +10,7 @@ import pandas as pd
 from events.order_event import OrderEvent
 from events.close_pending_orders_event import ClosePendingOrdersEvent
 from perfomance import create_sharpe_ratio, create_drawdowns
-
+from stats import Stats
 
 class Portfolio(object):
 
@@ -27,7 +27,9 @@ class Portfolio(object):
     time-index, as well as the percentage change in
     portfolio total across bars.
     """
-    def __init__(self, bars, events, start_date, initial_capital, output_directory, position_size_handler):
+
+    def __init__(self, bars, events, start_date, initial_capital, output_directory, equity_filename,
+                 position_size_handler):
         """
         Initialises the portfolio with bars and an event queue.
         Also includes a starting datetime index and initial capital
@@ -45,6 +47,7 @@ class Portfolio(object):
         self.start_date = start_date
         self.initial_capital = initial_capital
         self.output_directory = output_directory
+        self.equity_filename = equity_filename
         self.position_size_handler = position_size_handler
 
         self.all_positions = self.construct_all_positions()
@@ -248,12 +251,9 @@ class Portfolio(object):
         sharpe_ratio = create_sharpe_ratio(returns, periods=252*60*6.5)
         drawdown, max_dd, dd_duration = create_drawdowns(pnl)
         self.equity_curve['drawdown'] = drawdown
-        stats = [("Total Return", "%0.2f%%" % \
-                  ((total_return - 1.0) * 100.0)),
-                 ("Sharpe Ratio", "%0.2f" % sharpe_ratio),
-                 ("Max Drawdown", "%0.2f%%" % (max_dd * 100.0)),
-                 ("Drawdown Duration", "%d" % dd_duration)]
 
-        self.equity_curve.to_csv(os.path.join(self.output_directory, 'equity.csv'))
+        stats = Stats((total_return - 1.0) * 100.0, sharpe_ratio, max_dd * 100.0, dd_duration)
+
+        self.equity_curve.to_csv(os.path.join(self.output_directory, self.equity_filename))
 
         return stats

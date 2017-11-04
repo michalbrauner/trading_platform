@@ -1,5 +1,6 @@
 from __future__ import print_function
 import pprint
+import sys
 
 try:
     import Queue as queue
@@ -20,7 +21,8 @@ class Backtest(object):
     def __init__(
             self, csv_dir, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, data_handler,
-            execution_handler, portfolio, strategy, position_size_handler, logger, enabled_logs
+            execution_handler, portfolio, strategy, position_size_handler, logger, enabled_logs,
+            strategy_params_dict, equity_filename
     ):
         """
         Initialises the backtest.
@@ -51,11 +53,16 @@ class Backtest(object):
         self.position_size_handler = position_size_handler
         self.logger = logger
         self.enabled_log_types = enabled_logs
+        self.strategy_params_dict = strategy_params_dict
+        self.equity_filename = equity_filename
+
         self.events = queue.Queue()
         self.signals = 0
         self.orders = 0
         self.fills = 0
         self.num_strats = 1
+
+        self.stats = None
 
         self._generate_trading_instances()
 
@@ -63,14 +70,11 @@ class Backtest(object):
         """
         Generates the trading instance objects from their class types.
         """
-        print(
-            "Creating DataHandler, Strategy, Portfolio and ExecutionHandler"
-        )
         self.data_handler = self.data_handler_cls(self.events, self.csv_dir,
                                                   self.symbol_list)
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory, self.position_size_handler)
-        self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events)
+                                            self.output_directory, self.equity_filename, self.position_size_handler)
+        self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
         self.execution_handler = self.execution_handler_cls(self.data_handler, self.events)
 
     def _run_backtest(self):
@@ -81,10 +85,12 @@ class Backtest(object):
         if self.logger is not None:
             self.logger.open()
 
+        self.write_progress()
+
         i = 0
         while True:
             i += 1
-            print(i)
+            self.write_progress()
 
             # Update the market bars
             if self.data_handler.continue_backtest:
@@ -120,6 +126,9 @@ class Backtest(object):
 
             time.sleep(self.heartbeat)
 
+        print('')
+        sys.stdout.flush()
+
         if self.logger is not None:
             self.logger.close()
 
@@ -136,19 +145,20 @@ class Backtest(object):
 
             self.log_message(iteration, log)
 
-    def _output_performance(self):
+    def write_progress(self):
+        progress = int(round(self.data_handler.get_position_in_percentage(), 0))
+        print('Running backtest ({}%)'.format(progress), end='\r')
+        sys.stdout.flush()
+
+    def _save_equity_and_generate_stats(self):
         """
         Outputs the strategy performance from the backtest.
         """
         self.portfolio.create_equity_curve_dataframe()
+        self.stats = self.portfolio.output_summary_stats()
 
-        print("Creating summary stats...")
-        stats = self.portfolio.output_summary_stats()
-
-        print("Creating equity curve...")
-        print(self.portfolio.equity_curve.tail(10))
-
-        pprint.pprint(stats)
+    def print_performance(self):
+        self.stats.print_stats()
 
         print("Signals: %s" % self.signals)
         print("Orders: %s" % self.orders)
@@ -156,9 +166,7 @@ class Backtest(object):
 
     def simulate_trading(self):
         """
-        Simulates the backtest and outputs portfolio performance.
+        Simulates the backtest.
         """
         self._run_backtest()
-        self._output_performance()
-
-
+        self._save_equity_and_generate_stats()
