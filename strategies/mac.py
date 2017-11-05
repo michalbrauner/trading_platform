@@ -1,8 +1,8 @@
 from __future__ import print_function
 
 import datetime
-
 import numpy as np
+import args_parser
 
 from events.signal_event import SignalEvent
 from strategy import Strategy
@@ -130,3 +130,32 @@ class MovingAverageCrossStrategy(Strategy):
 
     def get_pip_value(self):
         return 0.00001
+
+
+class MovingAverageCrossStrategyConfigurationTools:
+    def __init__(self, settings):
+        self.settings = settings
+
+    @staticmethod
+    def get_long_opts():
+        return ['short_window=', 'long_window=']
+
+    def get_strategy_params(self):
+        return dict(
+            short_window=self.settings['short_window'],
+            long_window=self.settings['long_window']
+        )
+
+    def use_argument_if_valid(self, option, argument_value):
+        if option == '--short_window':
+            self.settings['short_window'] = argument_value
+        elif option == '--long_window':
+            self.settings['long_window'] = argument_value
+
+        return self.settings
+
+    def valid_arguments_and_convert_if_necessarily(self):
+        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'short_window')
+        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'long_window')
+
+        return self.settings
