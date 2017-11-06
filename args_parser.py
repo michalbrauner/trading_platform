@@ -69,6 +69,9 @@ def validate_settings_is_number_and_set_to_int(settings, settings_item, is_requi
     if is_required:
         validate_settings_exists(settings, settings_item)
 
+    if settings[settings_item] is None:
+        return settings
+
     if re.match(REG_NUMBER, settings[settings_item]) is None:
         raise Exception('{} needs to be a number'.format(settings_item))
     else:
@@ -80,6 +83,9 @@ def validate_settings_is_number_and_set_to_int(settings, settings_item, is_requi
 def validate_settings_is_datetime_and_set_to_datetime_object(settings, settings_item, is_required=True):
     if is_required:
         validate_settings_exists(settings, settings_item)
+
+    if settings[settings_item] is None:
+        return settings
 
     if re.match(REG_DATETIME, settings[settings_item]) is None:
         raise Exception('{} needs to be in \'yyyy-mm-ddThh:mm:ss\' format'.format(settings_item))

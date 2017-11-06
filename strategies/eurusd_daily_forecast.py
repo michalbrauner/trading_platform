@@ -31,6 +31,9 @@ class EurUsdDailyForecastStrategy(Strategy):
         self.datetime_now = datetime.datetime.utcnow()
         self.portfolio = portfolio
 
+        self.stop_loss_pips = stop_loss_pips
+        self.take_profit_pips = take_profit_pips
+
         self.bought = self._calculate_initial_bought()
         self.bar_indexes = self._calculate_initial_bar_indexes()
 
@@ -39,7 +42,7 @@ class EurUsdDailyForecastStrategy(Strategy):
         self.model_output_file = model_output_file
 
         if trained_model_file is None and train_data is None:
-            raise Exception('Either train_model_file or train_data need to be defined')
+            raise Exception('Either trained_model_file or train_data need to be defined')
 
         if self.train_data is not None:
 
@@ -113,49 +116,63 @@ class EurUsdDailyForecastStrategy(Strategy):
         return model
 
     def calculate_signals(self, event):
-        sym = self.symbol_list[0]
-        dt = self.datetime_now
+        symbol = self.symbol_list[0]
+        datetime_now = self.datetime_now
 
-        if event.type == 'MARKET' and sym == 'eurusd':
+        if event.type == 'MARKET' and symbol == 'eurusd':
 
-            if self.portfolio.current_positions[sym] == 0:
-                self.bought[sym] = 'OUT'
+            if self.portfolio.current_positions[symbol] == 0:
+                self.bought[symbol] = 'OUT'
 
-            self.bar_indexes[sym] += 1
+            self.bar_indexes[symbol] += 1
 
-            if self.bar_indexes[sym] > 5:
+            if self.bar_indexes[symbol] > 5:
 
-                bar_date = self.bars.get_latest_bar_datetime(sym)
-                lags = self.bars.get_latest_bars_values(sym, 'close_bid', N=3)
+                bar_date = self.bars.get_latest_bar_datetime(symbol)
+                bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
+
+                lags = self.bars.get_latest_bars_values(symbol, 'close_bid', N=3)
                 lags_returns = pd.Series(lags).pct_change() * 100
 
-                pred_series = pd.Series(
+                prediction_series = pd.Series(
                     {
                         'Lag1': lags_returns[1],
                         'Lag2': lags_returns[2]
                     }
                 )
 
-                pred = self.model.predict(pred_series)
+                prediction = self.model.predict(prediction_series)
 
-                if pred > 0 and self.bought[sym] == 'OUT':
-                    self.bought[sym] = 'LONG'
-                    signal = SignalEvent(1, sym, bar_date, dt, 'LONG', 1.0)
+                if prediction > 0 and self.bought[symbol] == 'OUT':
+                    direction = 'LONG'
+
+                    self.bought[symbol] = direction
+
+                    stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
+                    take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
+
+                    signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
                     self.events.put(signal)
 
-                if pred < 0 and self.bought[sym] == 'OUT':
-                    self.bought[sym] = 'SHORT'
-                    signal = SignalEvent(1, sym, bar_date, dt, 'SHORT', 1.0)
+                if prediction < 0 and self.bought[symbol] == 'OUT':
+                    direction = 'SHORT'
+
+                    self.bought[symbol] = direction
+
+                    stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
+                    take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
+
+                    signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
                     self.events.put(signal)
 
-                if pred > 0 and self.bought[sym] == 'SHORT':
-                    self.bought[sym] = 'OUT'
-                    signal = SignalEvent(1, sym, bar_date, dt, 'EXIT', 1.0)
+                if prediction > 0 and self.bought[symbol] == 'SHORT':
+                    self.bought[symbol] = 'OUT'
+                    signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0)
                     self.events.put(signal)
 
-                if pred < 0 and self.bought[sym] == 'LONG':
-                    self.bought[sym] = 'OUT'
-                    signal = SignalEvent(1, sym, bar_date, dt, 'EXIT', 1.0)
+                if prediction < 0 and self.bought[symbol] == 'LONG':
+                    self.bought[symbol] = 'OUT'
+                    signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0)
                     self.events.put(signal)
 
 

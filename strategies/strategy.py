@@ -27,3 +27,27 @@ class Strategy(object):
         Provides the mechanisms to calculate the list of signals.
         """
         raise NotImplementedError("Should implement calculate_signals()")
+
+    def calculate_stop_loss_price(self, price, stop_loss_pips, direction):
+        stop_loss = None
+
+        if direction == 'LONG' and stop_loss_pips is not None:
+            stop_loss = price - (stop_loss_pips * self.get_pip_value())
+        elif direction == 'SHORT' and stop_loss_pips is not None:
+            stop_loss = price + (stop_loss_pips * self.get_pip_value())
+
+        return stop_loss
+
+    def calculate_take_profit_price(self, price, take_profit_pips, direction):
+        take_profit = None
+
+        if direction == 'LONG' and take_profit_pips is not None:
+            take_profit = price + (take_profit_pips * self.get_pip_value())
+        elif direction == 'SHORT' and take_profit_pips is not None:
+            take_profit = price - (take_profit_pips * self.get_pip_value())
+
+        return take_profit
+
+    @staticmethod
+    def get_pip_value():
+        return 0.00001

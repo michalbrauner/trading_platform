@@ -78,43 +78,28 @@ class MovingAverageCrossStrategy(Strategy):
 
                     symbol = s
                     dt = datetime.datetime.utcnow()
-                    sig_dir = ''
 
                     if short_sma > long_sma and self.bought[s] == 'OUT':
                         sig_dir = 'LONG'
 
-                        if self.stop_loss_pips is None:
-                            stop_loss = None
-                        else:
-                            stop_loss = bar_price - (self.stop_loss_pips * self.get_pip_value())
-
-                        if self.take_profit_pips is None:
-                            take_profit = None
-                        else:
-                            take_profit = bar_price + (self.take_profit_pips * self.get_pip_value())
+                        stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, sig_dir)
+                        take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
                         self.events.put(signal)
 
-                        self.bought[s] = 'LONG'
+                        self.bought[s] = sig_dir
 
                     elif short_sma < long_sma and self.bought[s] == 'OUT':
                         sig_dir = 'SHORT'
 
-                        if self.stop_loss_pips is None:
-                            stop_loss = None
-                        else:
-                            stop_loss = bar_price + (self.stop_loss_pips * self.get_pip_value())
-
-                        if self.take_profit_pips is None:
-                            take_profit = None
-                        else:
-                            take_profit = bar_price - (self.take_profit_pips * self.get_pip_value())
+                        stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, sig_dir)
+                        take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
                         self.events.put(signal)
 
-                        self.bought[s] = 'SHORT'
+                        self.bought[s] = sig_dir
 
                     elif short_sma < long_sma and self.bought[s] == "LONG":
                         sig_dir = 'EXIT'
@@ -129,9 +114,6 @@ class MovingAverageCrossStrategy(Strategy):
                         signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
                         self.events.put(signal)
                         self.bought[s] = 'OUT'
-
-    def get_pip_value(self):
-        return 0.00001
 
 
 class MovingAverageCrossStrategyConfigurationTools(ConfigurationTools):
