@@ -4,6 +4,8 @@ import datetime
 import numpy as np
 import args_parser
 
+from strategies.configuration_tools import ConfigurationTools
+
 from events.signal_event import SignalEvent
 from strategy import Strategy
 
@@ -132,7 +134,7 @@ class MovingAverageCrossStrategy(Strategy):
         return 0.00001
 
 
-class MovingAverageCrossStrategyConfigurationTools:
+class MovingAverageCrossStrategyConfigurationTools(ConfigurationTools):
     def __init__(self, settings):
         self.settings = settings
 
@@ -151,6 +153,15 @@ class MovingAverageCrossStrategyConfigurationTools:
             self.settings['short_window'] = argument_value
         elif option == '--long_window':
             self.settings['long_window'] = argument_value
+
+        return self.settings
+
+    def set_default_values(self):
+        if 'short_window' not in self.settings:
+            self.settings['short_window'] = None
+
+        if 'long_window' not in self.settings:
+            self.settings['long_window'] = None
 
         return self.settings
 

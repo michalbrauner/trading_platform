@@ -5,6 +5,8 @@ import args_parser
 import getopt
 import os.path
 
+from strategies.configuration_tools import ConfigurationTools
+
 import pandas as pd
 from sklearn.externals import joblib
 from sklearn.qda import QDA
@@ -157,7 +159,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                     self.events.put(signal)
 
 
-class EurUsdDailyForecastStrategyConfigurationTools:
+class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
     def __init__(self, settings):
         self.settings = settings
         self.set_default_values()
