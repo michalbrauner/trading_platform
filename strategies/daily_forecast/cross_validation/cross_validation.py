@@ -14,12 +14,15 @@ class CrossValidation(object):
     def calculate_stats_and_show_result(self, x_test, y_test):
         prediction = self.model.predict(x_test)
 
-        title_separator = '-------------------------------------\n'
-        print(title_separator + self.get_summary_title() + title_separator)
+        self.print_title()
 
         print('Hit rate:\n%0.3f' % self.model.score(x_test, y_test))
         print('Confusion matrix: %s\n' % confusion_matrix(prediction, y_test))
         print('\n')
+
+    def print_title(self):
+        title_separator = '-------------------------------------'
+        print('{}\n{}\n{}\n'.format(title_separator, self.get_summary_title(), title_separator))
 
     def fit_and_save_model_if_file_defined(self, x, y):
         self.model.fit(x, y)

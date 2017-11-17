@@ -14,6 +14,7 @@ from sklearn.lda import LDA
 from sklearn.svm import LinearSVC, SVC
 from sklearn.ensemble import RandomForestClassifier
 from strategies.daily_forecast.cross_validation.train_test_split import TrainTestSplit
+from strategies.daily_forecast.cross_validation.kfold import KFold
 
 from events.signal_event import SignalEvent
 from strategy import Strategy
@@ -83,7 +84,8 @@ class EurUsdDailyForecastStrategy(Strategy):
         y = eurusd_ret['Direction']
 
         model = self.get_model()
-        cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
+        #cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
+        cross_validation = KFold(model, self.model_output_file, 10)
         cross_validation.process(x, y)
 
         return model
@@ -97,10 +99,10 @@ class EurUsdDailyForecastStrategy(Strategy):
         #             gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
         #             shrinking=True, tol=0.001, verbose=False)
 
-        #model = LogisticRegression()
+        model = LogisticRegression()
         #model = QDA()
         # model = LDA()
-        model = LinearSVC()
+        #model = LinearSVC()
 
         return model
 
