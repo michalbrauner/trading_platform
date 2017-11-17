@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import datetime
 import args_parser
-import getopt
 import os.path
 
 from strategies.configuration_tools import ConfigurationTools
@@ -14,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.lda import LDA
 from sklearn.svm import LinearSVC, SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+from strategies.daily_forecast.cross_validation.train_test_split import TrainTestSplit
 
 from events.signal_event import SignalEvent
 from strategy import Strategy
@@ -23,8 +22,7 @@ from machine_learning.lagged_series import create_lagged_series
 
 class EurUsdDailyForecastStrategy(Strategy):
     def __init__(self, bars, portfolio, events, trained_model_file=None, train_data=None, model_output_file=None,
-                 model_start_date=None, model_start_test_date=None,
-                 stop_loss_pips=None, take_profit_pips=None):
+                 model_start_date=None, stop_loss_pips=None, take_profit_pips=None):
         self.bars = bars
         self.symbol_list = self.bars.symbol_list
         self.events = events
@@ -50,10 +48,8 @@ class EurUsdDailyForecastStrategy(Strategy):
                 raise Exception('You need to define model_start_date to train model')
 
             self.model_start_date = model_start_date
-            self.model_start_test_date = model_start_test_date
 
-            self.model = self.create_symbol_forecast_model(self.train_data, self.model_start_date,
-                                                           self.model_start_test_date)
+            self.model = self.create_symbol_forecast_model(self.train_data, self.model_start_date)
 
         elif self.trained_model is not None:
             self.model = joblib.load(self.trained_model)
@@ -80,15 +76,19 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         return bar_indexes
 
-    def create_symbol_forecast_model(self, file, model_start_date, model_start_test_date):
+    def create_symbol_forecast_model(self, file, model_start_date):
         eurusd_ret = create_lagged_series(file, model_start_date, lags=5)
 
-        X = eurusd_ret[['Lag1', 'Lag2']]
+        x = eurusd_ret[['Lag1', 'Lag2']]
         y = eurusd_ret['Direction']
 
-        X_train = X[X.index < model_start_test_date]
-        y_train = y[y.index < model_start_test_date]
+        model = self.get_model()
+        cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
+        cross_validation.process(x, y)
 
+        return model
+
+    def get_model(self):
         # model = RandomForestClassifier(n_estimators=1000, criterion='gini', max_depth=None, min_samples_split=2,
         #                                min_samples_leaf=1, max_features='auto', bootstrap=True, oob_score=False,
         #                                n_jobs=1, random_state=None, verbose=0)
@@ -97,21 +97,10 @@ class EurUsdDailyForecastStrategy(Strategy):
         #             gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
         #             shrinking=True, tol=0.001, verbose=False)
 
-        model = LogisticRegression()
-        model.fit(X_train, y_train)
-
-        if self.model_output_file is not None:
-            joblib.dump(model, self.model_output_file)
-
-        if model_start_test_date is not None:
-
-            X_test = X[X.index >= model_start_test_date]
-            y_test = y[y.index >= model_start_test_date]
-
-            pred = model.predict(X_test)
-
-            print('Hit rate:\n%0.3f' % model.score(X_test, y_test))
-            print('Confusion matrix: %s\n' % confusion_matrix(pred, y_test))
+        #model = LogisticRegression()
+        #model = QDA()
+        # model = LDA()
+        model = LinearSVC()
 
         return model
 
@@ -184,15 +173,14 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
     @staticmethod
     def get_long_opts():
         return ['trained_model_file=', 'train_data=', 'model_output_file=',
-                'model_start_date=', 'model_start_test_date=']
+                'model_start_date=']
 
     def get_strategy_params(self):
         return dict(
             trained_model_file=self.settings['trained_model_file'],
             train_data=self.settings['train_data'],
             model_output_file=self.settings['model_output_file'],
-            model_start_date=self.settings['model_start_date'],
-            model_start_test_date=self.settings['model_start_test_date']
+            model_start_date=self.settings['model_start_date']
         )
 
     def use_argument_if_valid(self, option, argument_value):
@@ -204,8 +192,6 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
             self.settings['model_output_file'] = argument_value
         elif option == '--model_start_date':
             self.settings['model_start_date'] = argument_value
-        elif option == '--model_start_test_date':
-            self.settings['model_start_test_date'] = argument_value
 
         return self.settings
 
@@ -222,9 +208,6 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
         if 'model_start_date' not in self.settings:
             self.settings['model_start_date'] = None
 
-        if 'model_start_test_date' not in self.settings:
-            self.settings['model_start_test_date'] = None
-
         return self.settings
 
     def valid_arguments_and_convert_if_necessarily(self):
@@ -237,8 +220,5 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
             raise Exception('train_data does not exist')
 
         args_parser.validate_settings_is_datetime_and_set_to_datetime_object(self.settings, 'model_start_date', False)
-
-        args_parser.validate_settings_is_datetime_and_set_to_datetime_object(self.settings, 'model_start_test_date',
-                                                                             False)
 
         return self.settings
