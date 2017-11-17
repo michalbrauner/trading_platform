@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.externals import joblib
 
 
-class CrossValidation(object):
+class OptimizationAndValidation(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, model, model_output_file):

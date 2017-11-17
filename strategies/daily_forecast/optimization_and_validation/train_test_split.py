@@ -1,8 +1,8 @@
-from strategies.daily_forecast.cross_validation.cross_validation import CrossValidation
+from strategies.daily_forecast.optimization_and_validation.cross_validation import OptimizationAndValidation
 from sklearn.cross_validation import train_test_split
 
 
-class TrainTestSplit(CrossValidation):
+class TrainTestSplit(OptimizationAndValidation):
 
     def __init__(self, model, model_output_file, test_size, random_state):
         super(TrainTestSplit, self).__init__(model, model_output_file)

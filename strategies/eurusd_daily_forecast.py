@@ -13,8 +13,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.lda import LDA
 from sklearn.svm import LinearSVC, SVC
 from sklearn.ensemble import RandomForestClassifier
-from strategies.daily_forecast.cross_validation.train_test_split import TrainTestSplit
-from strategies.daily_forecast.cross_validation.kfold import KFold
+from strategies.daily_forecast.optimization_and_validation.train_test_split import TrainTestSplit
+from strategies.daily_forecast.optimization_and_validation.kfold import KFold
+from strategies.daily_forecast.optimization_and_validation.grid_search import GridSearch
 
 from events.signal_event import SignalEvent
 from strategy import Strategy
@@ -85,7 +86,15 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         model = self.get_model()
         #cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
-        cross_validation = KFold(model, self.model_output_file, 10)
+        #cross_validation = KFold(model, self.model_output_file, 10)
+
+        tuned_parameters = [{
+            'kernel': ['rbf'],
+            'gamma': [1e-3, 1e-4],
+            'C': [1, 10, 100, 1000]
+         }]
+
+        cross_validation = GridSearch(model, self.model_output_file, tuned_parameters, 10)
         cross_validation.process(x, y)
 
         return model
@@ -99,7 +108,9 @@ class EurUsdDailyForecastStrategy(Strategy):
         #             gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
         #             shrinking=True, tol=0.001, verbose=False)
 
-        model = LogisticRegression()
+        model = SVC()
+
+        #model = LogisticRegression()
         #model = QDA()
         # model = LDA()
         #model = LinearSVC()
