@@ -6,6 +6,7 @@ from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from strategies.mac import MovingAverageCrossStrategy
+from strategies.eurusd_daily_forecast import EurUsdDailyForecastStrategy
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 import args_parser
@@ -110,7 +111,12 @@ def main(argv):
 
 def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, equity_filename):
 
-    strategy_params = dict(short_window=9, long_window=40, stop_loss_pips = sl, take_profit_pips = tp)
+    strategy_params = dict(
+        stop_loss_pips=sl,
+        take_profit_pips=tp,
+        trained_model_file='m:\\apps\\python\\forex\\backtesting\\backtester_output\\' \
+            + 'forecast\\logistic_regression\\model\\model.pkl'
+    )
 
     backtest = Backtest(
         settings['data_directory'],
@@ -122,7 +128,7 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, equity_f
         HistoricCSVDataHandler,
         SimulatedExecutionHandler,
         Portfolio,
-        MovingAverageCrossStrategy,
+        EurUsdDailyForecastStrategy,
         FixedPositionSize(0.5),
         TextLogger(events_log_file),
         [Backtest.LOG_TYPE_EVENTS],

@@ -46,39 +46,57 @@ def get_basic_settings(argv, long_opts):
 
 
 def validate_settings(settings):
-    if settings['data_directory'] is None:
-        raise Exception('Missing values - data_directory is required')
-    elif os.path.isdir(settings['data_directory']) is False:
-        raise Exception('data_directory doesn\'t exist')
+    required_items = ['data_directory', 'symbols', 'start_date', 'output_directory']
+    for required_item in required_items:
+        settings = validate_settings_exists(settings, required_item)
 
-    if settings['symbols'] is None:
-        raise Exception('Missing values - symbols is required')
-    elif re.match(REG_SYMBOLS_SEPARATED_BY_COMA, settings['symbols']) is None:
+    if os.path.isdir(settings['data_directory']) is False:
+        raise Exception('data_directory does not exist')
+
+    if re.match(REG_SYMBOLS_SEPARATED_BY_COMA, settings['symbols']) is None:
         raise Exception('symbols needs to be list of symbols separated by coma')
     else:
         settings['symbols'] = settings['symbols'].split(',')
 
     validate_settings_is_number_and_set_to_int(settings, 'initial_capital_usd')
+    validate_settings_is_datetime_and_set_to_datetime_object(settings, 'start_date')
 
-    if settings['start_date'] is None:
-        raise Exception('Missing values - start_date is required')
-    elif re.match(REG_DATETIME, settings['start_date']) is None:
-        raise Exception('start_date needs to be in \'yyyy-mm-ddThh:mm:ss\' format')
-    else:
-        settings['start_date'] = datetime.datetime.strptime(settings['start_date'], DATETIME_FORMAT)
-
-    if settings['output_directory'] is None:
-        raise Exception('Missing value - output_directory is required')
-    elif os.path.isdir(settings['output_directory']) is False:
-        raise Exception('output_directory doesn\'t exist')
+    if os.path.isdir(settings['output_directory']) is False:
+        raise Exception('output_directory does not exist')
 
 
 def validate_settings_is_number_and_set_to_int(settings, settings_item, is_required=True):
-    if settings[settings_item] is None and is_required:
-        raise Exception('Missing value - {} is required'.format(settings_item))
-    elif re.match(REG_NUMBER, settings[settings_item]) is None:
+    if is_required:
+        validate_settings_exists(settings, settings_item)
+
+    if settings[settings_item] is None:
+        return settings
+
+    if re.match(REG_NUMBER, settings[settings_item]) is None:
         raise Exception('{} needs to be a number'.format(settings_item))
     else:
         settings[settings_item] = int(settings[settings_item])
+
+    return settings
+
+
+def validate_settings_is_datetime_and_set_to_datetime_object(settings, settings_item, is_required=True):
+    if is_required:
+        validate_settings_exists(settings, settings_item)
+
+    if settings[settings_item] is None:
+        return settings
+
+    if re.match(REG_DATETIME, settings[settings_item]) is None:
+        raise Exception('{} needs to be in \'yyyy-mm-ddThh:mm:ss\' format'.format(settings_item))
+    else:
+        settings[settings_item] = datetime.datetime.strptime(settings[settings_item], DATETIME_FORMAT)
+
+    return settings
+
+
+def validate_settings_exists(settings, settings_item):
+    if settings[settings_item] is None:
+        raise Exception('Missing value - {} is required'.format(settings_item))
 
     return settings
