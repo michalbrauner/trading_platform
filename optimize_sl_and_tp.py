@@ -111,11 +111,15 @@ def main(argv):
 
 def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, equity_filename):
 
+    trained_model_file = '/home/ubuntu/backtester_output/forecast/2004_2010_model/logistic_regression/model/model.pkl'
+
+    # trained_model_file = 'm:\\apps\\python\\forex\\backtesting\\backtester_output\\' \
+    #                      + 'forecast\\logistic_regression\\model\\model.pkl'
+
     strategy_params = dict(
         stop_loss_pips=sl,
         take_profit_pips=tp,
-        trained_model_file='m:\\apps\\python\\forex\\backtesting\\backtester_output\\' \
-            + 'forecast\\logistic_regression\\model\\model.pkl'
+        trained_model_file=trained_model_file
     )
 
     backtest = Backtest(
