@@ -21,6 +21,7 @@ from events.signal_event import SignalEvent
 from strategy import Strategy
 from machine_learning.lagged_series import create_lagged_series
 
+import numpy as np
 
 class EurUsdDailyForecastStrategy(Strategy):
     def __init__(self, bars, portfolio, events, trained_model_file=None, train_data=None, model_output_file=None,
@@ -121,6 +122,9 @@ class EurUsdDailyForecastStrategy(Strategy):
         symbol = self.symbol_list[0]
         datetime_now = self.datetime_now
 
+        sma_short_period = 21
+        sma_long_period = 100
+
         if event.type == 'MARKET' and symbol == 'eurusd':
 
             if self.portfolio.current_positions[symbol] == 0:
@@ -128,7 +132,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
             self.bar_indexes[symbol] += 1
 
-            if self.bar_indexes[symbol] > 5:
+            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > sma_long_period:
 
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
@@ -144,8 +148,13 @@ class EurUsdDailyForecastStrategy(Strategy):
                 )
 
                 prediction = self.model.predict([prediction_series])
+                sma_short = self.calculate_sma(symbol, sma_short_period)
+                sma_long = self.calculate_sma(symbol, sma_long_period)
 
-                if prediction > 0 and self.bought[symbol] == 'OUT':
+                can_open_long = prediction > 0 and sma_short > sma_long
+                can_open_short = prediction < 0 and sma_short < sma_long
+
+                if can_open_long and self.bought[symbol] == 'OUT':
                     direction = 'LONG'
 
                     self.bought[symbol] = direction
@@ -156,7 +165,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                     signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
                     self.events.put(signal)
 
-                if prediction < 0 and self.bought[symbol] == 'OUT':
+                if can_open_short and self.bought[symbol] == 'OUT':
                     direction = 'SHORT'
 
                     self.bought[symbol] = direction
@@ -176,6 +185,13 @@ class EurUsdDailyForecastStrategy(Strategy):
                     self.bought[symbol] = 'OUT'
                     signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0)
                     self.events.put(signal)
+
+    def calculate_sma(self, symbol, period):
+        bars = self.bars.get_latest_bars_values(
+            symbol, 'close_bid', N=period
+        )
+
+        return np.mean(bars[-period:])
 
 
 class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
