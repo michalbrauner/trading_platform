@@ -8,9 +8,9 @@ from strategies.configuration_tools import ConfigurationTools
 
 import pandas as pd
 from sklearn.externals import joblib
-from sklearn.qda import QDA
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
-from sklearn.lda import LDA
 from sklearn.svm import LinearSVC, SVC
 from sklearn.ensemble import RandomForestClassifier
 from strategies.daily_forecast.optimization_and_validation.train_test_split import TrainTestSplit
@@ -111,8 +111,8 @@ class EurUsdDailyForecastStrategy(Strategy):
         #model = SVC()
 
         model = LogisticRegression()
-        #model = QDA()
-        #model = LDA()
+        #model = QuadraticDiscriminantAnalysis()
+        #model = LinearDiscriminantAnalysis()
         #model = LinearSVC()
 
         return model
