@@ -85,8 +85,8 @@ class EurUsdDailyForecastStrategy(Strategy):
         y = eurusd_ret['Direction']
 
         model = self.get_model()
-        #cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
-        cross_validation = KFold(model, self.model_output_file, 10)
+        cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
+        #cross_validation = KFold(model, self.model_output_file, 10)
 
         # tuned_parameters = [{
         #     'kernel': ['rbf'],
@@ -143,7 +143,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                     }
                 )
 
-                prediction = self.model.predict(prediction_series)
+                prediction = self.model.predict([prediction_series])
 
                 if prediction > 0 and self.bought[symbol] == 'OUT':
                     direction = 'LONG'
