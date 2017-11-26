@@ -88,13 +88,14 @@ def main(argv):
     print('Total number of tests to run: %d' % total_test_to_run)
 
     for parameters in itertools.product(*values_to_try):
-        run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, parameters[0], parameters[1],
+        run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, settings, parameters[0], parameters[1],
                                           parameters[2], parameters[3])
 
     csv_file.close()
 
 
-def run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, sl, tp, short_window, long_window):
+def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, settings, sl, tp, short_window,
+                                      long_window):
     events_log_file = '{}/events_{}_{}_{}_{}.log'.format(settings['output_directory'], sl, tp, short_window,
                                                          long_window)
 
@@ -126,7 +127,7 @@ def run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, sl, 
             stats.get_drawdown_duration()
         ]
     )
-    csv_file_writer.flush()
+    csv_file.flush()
 
     print('')
 
