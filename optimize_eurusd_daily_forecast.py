@@ -95,10 +95,10 @@ def main(argv):
 
 
 def run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, sl, tp, short_window, long_window):
+    events_log_file = '{}/events_{}_{}_{}_{}.log'.format(settings['output_directory'], sl, tp, short_window,
+                                                         long_window)
 
-    events_log_file = '{}/events_{}_{}.log'.format(settings['output_directory'], sl, tp)
-
-    equity_filename = 'equity_{}_{}.csv'.format(sl, tp)
+    equity_filename = 'equity_{}_{}_{}_{}.csv'.format(sl, tp, short_window, long_window)
 
     print('Running backtest for: SL=%d, TP=%d, SMA_short=%d, SMA_long=%d' % (sl, tp, short_window, long_window))
 
@@ -126,6 +126,7 @@ def run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, sl, 
             stats.get_drawdown_duration()
         ]
     )
+    csv_file_writer.flush()
 
     print('')
 
