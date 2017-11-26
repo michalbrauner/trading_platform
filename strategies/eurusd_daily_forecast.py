@@ -23,9 +23,11 @@ from machine_learning.lagged_series import create_lagged_series
 
 import numpy as np
 
+
 class EurUsdDailyForecastStrategy(Strategy):
     def __init__(self, bars, portfolio, events, trained_model_file=None, train_data=None, model_output_file=None,
-                 model_start_date=None, stop_loss_pips=None, take_profit_pips=None):
+                 model_start_date=None, stop_loss_pips=None, take_profit_pips=None, sma_short_period=None,
+                 sma_long_period=None):
         self.bars = bars
         self.symbol_list = self.bars.symbol_list
         self.events = events
@@ -34,6 +36,9 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         self.stop_loss_pips = stop_loss_pips
         self.take_profit_pips = take_profit_pips
+
+        self.sma_short_period = sma_short_period
+        self.sma_long_period = sma_long_period
 
         self.bought = self._calculate_initial_bought()
         self.bar_indexes = self._calculate_initial_bar_indexes()
@@ -122,9 +127,6 @@ class EurUsdDailyForecastStrategy(Strategy):
         symbol = self.symbol_list[0]
         datetime_now = self.datetime_now
 
-        sma_short_period = 21
-        sma_long_period = 100
-
         if event.type == 'MARKET' and symbol == 'eurusd':
 
             if self.portfolio.current_positions[symbol] == 0:
@@ -132,7 +134,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
             self.bar_indexes[symbol] += 1
 
-            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > sma_long_period:
+            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max(self.sma_long_period, self.sma_short_period):
 
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
@@ -148,8 +150,8 @@ class EurUsdDailyForecastStrategy(Strategy):
                 )
 
                 prediction = self.model.predict([prediction_series])
-                sma_short = self.calculate_sma(symbol, sma_short_period)
-                sma_long = self.calculate_sma(symbol, sma_long_period)
+                sma_short = self.calculate_sma(symbol, self.sma_short_period)
+                sma_long = self.calculate_sma(symbol, self.sma_long_period)
 
                 can_open_long = prediction > 0 and sma_short > sma_long
                 can_open_short = prediction < 0 and sma_short < sma_long
