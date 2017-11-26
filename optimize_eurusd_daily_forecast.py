@@ -13,6 +13,7 @@ import args_parser
 import csv, os
 import itertools
 import string
+import numpy as np
 
 
 def print_usage():
@@ -82,6 +83,9 @@ def main(argv):
         range(settings['short_window_min'], settings['short_window_max'] + 1, settings['short_window_step']),
         range(settings['long_window_min'], settings['long_window_max'] + 1, settings['long_window_step']),
     ]
+
+    total_test_to_run = np.product([len(data) for data in values_to_try])
+    print('Total number of tests to run: %d' % total_test_to_run)
 
     for parameters in itertools.product(*values_to_try):
         run_and_log_optimization_instance(csv_file_writer, heartbeat, settings, parameters[0], parameters[1],
