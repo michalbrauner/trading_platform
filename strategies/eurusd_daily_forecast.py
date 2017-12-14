@@ -264,4 +264,7 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
 
         args_parser.validate_settings_is_datetime_and_set_to_datetime_object(self.settings, 'model_start_date', False)
 
+        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'short_window')
+        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'long_window')
+
         return self.settings
