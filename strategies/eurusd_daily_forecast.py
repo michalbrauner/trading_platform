@@ -204,14 +204,16 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
     @staticmethod
     def get_long_opts():
         return ['trained_model_file=', 'train_data=', 'model_output_file=',
-                'model_start_date=']
+                'model_start_date=', 'short_window=', 'long_window=']
 
     def get_strategy_params(self):
         return dict(
             trained_model_file=self.settings['trained_model_file'],
             train_data=self.settings['train_data'],
             model_output_file=self.settings['model_output_file'],
-            model_start_date=self.settings['model_start_date']
+            model_start_date=self.settings['model_start_date'],
+            sma_short_period=self.settings['short_window'],
+            sma_long_period=self.settings['long_window']
         )
 
     def use_argument_if_valid(self, option, argument_value):
@@ -223,6 +225,10 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
             self.settings['model_output_file'] = argument_value
         elif option == '--model_start_date':
             self.settings['model_start_date'] = argument_value
+        elif option == '--short_window':
+            self.settings['short_window'] = argument_value
+        elif option == '--long_window':
+            self.settings['long_window'] = argument_value
 
         return self.settings
 
@@ -238,6 +244,12 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
 
         if 'model_start_date' not in self.settings:
             self.settings['model_start_date'] = None
+
+        if 'short_window' not in self.settings:
+            self.settings['short_window'] = None
+
+        if 'long_window' not in self.settings:
+            self.settings['long_window'] = None
 
         return self.settings
 
