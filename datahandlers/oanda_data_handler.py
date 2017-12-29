@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-import pandas.io.parsers
 from events.market_event import MarketEvent
 from oanda.stream import Stream as OandaPriceStream
-
+from timeframe.timeframe import TimeFrame
+from dateutil import parser
 
 from datahandlers.data_handler import DataHandler
 
@@ -25,6 +25,7 @@ class OandaDataHandler(DataHandler):
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
+        self.timeframe = TimeFrame.TIMEFRAME_S5
 
         self.stream = OandaPriceStream(account_id, access_token, self.symbol_list)
         self.stream.connect_to_stream()
@@ -36,15 +37,67 @@ class OandaDataHandler(DataHandler):
         """
 
         openedBar = pd.DataFrame()
+        opened_bar_finish_at = None
+
+        timeframe = TimeFrame(self.timeframe)
 
         for price in self.stream.get_price():
             if price['instrument'] == symbol:
                 newPriceData = pd.DataFrame(price, index=[price['datetime']])
-                openedBar = openedBar.append(newPriceData)
 
-        for b in self.symbol_data[symbol]:
-            self.symbol_position_info[symbol]['position'] = self.symbol_position_info[symbol]['position'] + 1
-            yield b
+                price_datetime = parser.parse(price['datetime'])
+                price_datetime = price_datetime.replace(tzinfo=None)
+                price_datetime = price_datetime.replace(microsecond=0)
+
+                bar_borders = timeframe.get_timeframe_border(price_datetime)
+
+                if opened_bar_finish_at is None:
+                    opened_bar_finish_at = bar_borders[1]
+
+                if opened_bar_finish_at >= price_datetime or 'datetime' not in openedBar:
+                    openedBar = openedBar.append(newPriceData)
+                else:
+                    price_bid_open = float(openedBar['bid'][0])
+                    price_bid_close = float(openedBar['bid'][-1])
+                    price_bid_high = float(openedBar['bid'].max())
+                    price_bid_low = float(openedBar['bid'].min())
+
+                    price_ask_open = float(openedBar['ask'][0])
+                    price_ask_close = float(openedBar['ask'][-1])
+                    price_ask_high = float(openedBar['ask'].max())
+                    price_ask_low = float(openedBar['ask'].min())
+
+                    data = {
+                        'datetime': bar_borders[0],
+                        'open_bid': price_bid_open,
+                        'open_ask': price_ask_open,
+                        'high_bid': price_bid_high,
+                        'high_ask': price_ask_high,
+                        'low_bid': price_bid_low,
+                        'low_ask': price_ask_low,
+                        'close_bid': price_bid_close,
+                        'close_ask': price_ask_close,
+                        'volume': 0
+                    }
+
+                    if symbol not in self.symbol_data:
+                        self.symbol_data[symbol] = [data]
+                        self.symbol_position_info[symbol] = dict(
+                            number_of_items=1,
+                            position=1
+                        )
+
+                        yield data
+                    else:
+                        self.symbol_data[symbol].append(data)
+
+                        self.symbol_position_info[symbol]['number_of_items'] = \
+                            self.symbol_position_info[symbol]['number_of_items'] + 1
+
+                        self.symbol_position_info[symbol]['position'] = \
+                            self.symbol_position_info[symbol]['position'] + 1
+
+                        yield data
 
     def get_latest_bar(self, symbol):
         """
@@ -121,10 +174,12 @@ class OandaDataHandler(DataHandler):
                 self.continue_backtest = False
             else:
                 if bar is not None:
+                    if s not in self.latest_symbol_data:
+                        self.latest_symbol_data[s] = []
+
                     self.latest_symbol_data[s].append(bar)
 
         self.events.put(MarketEvent())
-
 
     def get_position_in_percentage(self):
         return 100
