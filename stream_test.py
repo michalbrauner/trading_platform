@@ -1,5 +1,7 @@
+from __future__ import print_function
 from oanda.stream import Stream
 import os
+import sys
 
 
 def main():
@@ -10,7 +12,12 @@ def main():
     stream.connect_to_stream()
 
     for price in stream.get_price():
-        print(price)
+        print('{}'.format(price), end='\r')
+        sys.stdout.flush()
+
+    print('')
+    sys.stdout.flush()
+
 
 
 if __name__ == '__main__':
