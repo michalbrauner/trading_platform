@@ -39,7 +39,8 @@ class OandaDataHandler(DataHandler):
         """
 
         openedBar = pd.DataFrame()
-        opened_bar_finish_at = None
+        opened_bar_finishes_at = None
+        opened_bar_starts_at = None
 
         timeframe = TimeFrame(self.timeframe)
 
@@ -53,10 +54,11 @@ class OandaDataHandler(DataHandler):
 
                 bar_borders = timeframe.get_timeframe_border(price_datetime)
 
-                if opened_bar_finish_at is None:
-                    opened_bar_finish_at = bar_borders[1]
+                if opened_bar_finishes_at is None:
+                    opened_bar_finishes_at = bar_borders[1]
+                    opened_bar_starts_at = bar_borders[0]
 
-                if opened_bar_finish_at >= price_datetime or 'datetime' not in openedBar:
+                if opened_bar_finishes_at >= price_datetime or 'datetime' not in openedBar:
                     openedBar = openedBar.append(newPriceData)
                 else:
                     price_bid_open = float(openedBar['bid'][0])
@@ -70,7 +72,7 @@ class OandaDataHandler(DataHandler):
                     price_ask_low = float(openedBar['ask'].min())
 
                     data = {
-                        'datetime': bar_borders[0],
+                        'datetime': opened_bar_starts_at,
                         'open_bid': price_bid_open,
                         'open_ask': price_ask_open,
                         'high_bid': price_bid_high,
