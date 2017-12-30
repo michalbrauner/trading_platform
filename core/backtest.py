@@ -31,12 +31,12 @@ class Backtest(object):
     LOG_TYPE_EVENTS = 'events'
 
     def __init__(
-            self, csv_dir, output_directory, symbol_list, initial_capital,
+            self, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, data_handler_settings, data_handler_factory,
             execution_handler, portfolio, strategy, position_size_handler, logger, enabled_logs,
             strategy_params_dict, equity_filename
     ):
-        # type: (str, str, [], int, int, datetime, {}, DataHandlerFactory, ExecutionHandler.__name__, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
+        # type: (str, [], int, int, datetime, {}, DataHandlerFactory, ExecutionHandler.__name__, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
 
         """
         Initialises the backtest.
@@ -54,7 +54,6 @@ class Backtest(object):
         strategy - (Class) Generates signals based on market data.
         position_size_handler - (Class) Calculate position size for an order.
         """
-        self.csv_dir = csv_dir
         self.output_directory = output_directory
         self.symbol_list = symbol_list
         self.initial_capital = initial_capital

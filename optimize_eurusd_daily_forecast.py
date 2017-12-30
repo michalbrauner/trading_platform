@@ -14,6 +14,7 @@ import csv, os
 import itertools
 import string
 import numpy as np
+from datahandlers.data_handler_factory import DataHandlerFactory
 
 
 def print_usage():
@@ -144,13 +145,13 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_wi
     )
 
     backtest = Backtest(
-        settings['data_directory'],
         settings['output_directory'],
         settings['symbols'],
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        HistoricCSVDataHandler,
+        {'name': HistoricCSVDataHandler, 'csv_dir': settings['data_directory']},
+        DataHandlerFactory(),
         SimulatedExecutionHandler,
         Portfolio,
         EurUsdDailyForecastStrategy,

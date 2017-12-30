@@ -10,6 +10,7 @@ import strategies.mac as mac
 import strategies.eurusd_daily_forecast as eurusd_daily_forecast
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
+from datahandlers.data_handler_factory import DataHandlerFactory
 import args_parser
 
 
@@ -80,13 +81,13 @@ def main(argv):
     strategy_params.update(get_strategy_configuration_tools(settings).get_strategy_params())
 
     backtest = Backtest(
-        settings['data_directory'],
         settings['output_directory'],
         settings['symbols'],
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        HistoricCSVDataHandler,
+        {'name': HistoricCSVDataHandler, 'csv_dir': settings['data_directory']},
+        DataHandlerFactory(),
         SimulatedExecutionHandler,
         Portfolio,
         get_strategy(),
