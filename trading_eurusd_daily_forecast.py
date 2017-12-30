@@ -4,12 +4,13 @@ from sys import settrace
 from core.portfolio import Portfolio
 
 from core.trading import Trading
-from datahandlers.oanda_data_handler import OandaDataHandler
+from datahandlers.data_handler_factory import DataHandlerFactory
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 import strategies.eurusd_daily_forecast as eurusd_daily_forecast
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 import args_parser
+import os
 
 
 def get_strategy_configuration_tools_long_options():
@@ -76,6 +77,9 @@ def main(argv):
     strategy_params = dict(stop_loss_pips=settings['stop_loss'], take_profit_pips=settings['take_profit'])
     strategy_params.update(get_strategy_configuration_tools(settings).get_strategy_params())
 
+    account_id = os.environ.get('OANDA_API_ACCOUNT_ID')
+    access_token = os.environ.get('OANDA_API_ACCESS_TOKEN')
+
     trading = Trading(
         settings['data_directory'],
         settings['output_directory'],
@@ -83,7 +87,8 @@ def main(argv):
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        OandaDataHandler,
+        {'name': 'OandaDataHandler', 'account_id': account_id, 'access_token': access_token},
+        DataHandlerFactory(),
         SimulatedExecutionHandler,
         Portfolio,
         get_strategy(),

@@ -7,17 +7,19 @@ from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from dateutil import parser
 
+try:
+    import Queue as queue
+except ImportError:
+    import queue
+
 from datahandlers.data_handler import DataHandler
 
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events,  symbol_list, account_id, access_token):
-        """
-        Parameters:
-        events - The Event Queue.
-        symbol_list - A list of symbol strings.
-        """
+    def __init__(self, events,  symbol_list, stream):
+        # type: (queue.Queue, [], OandaPriceStream) -> None
+
         self.events = events
         self.symbol_list = symbol_list
 
@@ -27,7 +29,7 @@ class OandaDataHandler(DataHandler):
         self.continue_backtest = True
         self.timeframe = TimeFrame.TIMEFRAME_S5
 
-        self.stream = OandaPriceStream(account_id, access_token, self.symbol_list)
+        self.stream = stream
         self.stream.connect_to_stream()
 
     def _get_new_bar(self, symbol):

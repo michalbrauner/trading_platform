@@ -1,4 +1,4 @@
-from datahandlers.oanda_data_handler import OandaDataHandler
+from datahandlers.data_handler_factory import DataHandlerFactory
 import os
 
 try:
@@ -13,7 +13,10 @@ def main():
 
     events = queue.Queue()
 
-    data_handler = OandaDataHandler(events, ['EUR_USD'], account_id, access_token)
+    symbols = ['EUR_USD']
+
+    data_handler_factory = DataHandlerFactory()
+    data_handler = data_handler_factory.create_oanda_data_handler(events, symbols, account_id, access_token)
 
     while True:
         data_handler.update_bars()
