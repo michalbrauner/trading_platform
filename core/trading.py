@@ -1,13 +1,12 @@
 from __future__ import print_function
-import pprint
 import sys
+import datetime
 from datahandlers.data_handler_factory import DataHandlerFactory
 from core.portfolio import Portfolio
 from core.configuration import Configuration
 from strategies.strategy import Strategy
 from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
-from executionhandlers.execution_handler import ExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 
 try:
@@ -15,36 +14,21 @@ try:
 except ImportError:
     import queue
 
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-
 import time
-import datetime
 
 
-class Backtest(object):
-    """
-    Enscapsulates the settings and components for carrying out
-    an event-driven backtest.
-    """
+class Trading(object):
 
     LOG_TYPE_EVENTS = 'events'
 
-    def __init__(
-            self, output_directory, symbol_list, initial_capital,
-            heartbeat, start_date, configuration, data_handler_factory,
-            execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
-            strategy_params_dict, equity_filename
-    ):
+    def __init__(self, output_directory, symbol_list, initial_capital, heartbeat, start_date, configuration,
+                 data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
+                 strategy_params_dict, equity_filename):
         # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
 
         self.output_directory = output_directory
         self.symbol_list = symbol_list
-        self.initial_capital = initial_capital
         self.heartbeat = heartbeat
-        self.start_date = start_date
         self.configuration = configuration
         self.data_handler_factory = data_handler_factory
         self.execution_handler_factory = execution_handler_factory
@@ -55,6 +39,9 @@ class Backtest(object):
         self.enabled_log_types = enabled_logs
         self.strategy_params_dict = strategy_params_dict
         self.equity_filename = equity_filename
+
+        self.start_date = datetime.datetime.now()
+        self.initial_capital = 0
 
         self.events = queue.Queue()
         self.signals = 0
@@ -73,14 +60,13 @@ class Backtest(object):
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
                                             self.output_directory, self.equity_filename, self.position_size_handler)
-
         self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
                                                                                      self.data_handler,
                                                                                      self.events)
 
-    def _run_backtest(self):
+    def _run(self):
         if self.logger is not None:
             self.logger.open()
 
@@ -163,9 +149,6 @@ class Backtest(object):
         print("Orders: %s" % self.orders)
         print("Fills: %s" % self.fills)
 
-    def simulate_trading(self):
-        """
-        Simulates the backtest.
-        """
-        self._run_backtest()
+    def run(self):
+        self._run()
         self._save_equity_and_generate_stats()

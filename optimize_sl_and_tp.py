@@ -11,6 +11,7 @@ from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 import args_parser
 import csv, os
+from datahandlers.data_handler_factory import DataHandlerFactory
 
 
 def print_usage():
@@ -123,13 +124,17 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, equity_f
     )
 
     backtest = Backtest(
-        settings['data_directory'],
         settings['output_directory'],
         settings['symbols'],
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        HistoricCSVDataHandler,
+        {
+            'data_handler_name': HistoricCSVDataHandler,
+            'csv_dir': settings['data_directory'],
+            'execution_handler_name': SimulatedExecutionHandler,
+        },
+        DataHandlerFactory(),
         SimulatedExecutionHandler,
         Portfolio,
         EurUsdDailyForecastStrategy,

@@ -2,44 +2,43 @@ import sys, getopt
 
 from core.portfolio import Portfolio
 
-from core.backtest import Backtest
+from core.trading import Trading
 from core.configuration import Configuration
-from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
-from executionhandlers.simulated_execution import SimulatedExecutionHandler
+from datahandlers.data_handler_factory import DataHandlerFactory
+from executionhandlers.oanda_execution import OandaExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
-import strategies.eurusd_daily_forecast as eurusd_daily_forecast
+import strategies.mac as mac
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
-from datahandlers.data_handler_factory import DataHandlerFactory
 import args_parser
+import os
+from datahandlers.oanda_data_handler import OandaDataHandler
 
 
 def get_strategy_configuration_tools_long_options():
-    return eurusd_daily_forecast.EurUsdDailyForecastStrategyConfigurationTools.get_long_opts()
+    return mac.MovingAverageCrossStrategyConfigurationTools.get_long_opts()
 
 
 def get_strategy_configuration_tools(settings):
-    return eurusd_daily_forecast.EurUsdDailyForecastStrategyConfigurationTools(settings)
+    return mac.MovingAverageCrossStrategyConfigurationTools(settings)
 
 
 def get_strategy():
-    return eurusd_daily_forecast.EurUsdDailyForecastStrategy
+    return mac.MovingAverageCrossStrategy
 
 
 def print_usage():
-    print('Usage: python backtest.py -d <data_directory> -s <symbols> -c <initial_capital_usd> -b <start_datetime>'
-          + ' -o <output_directory> --short_window=<int> --long_window=<int> --stop_loss=<int> --take_profit=<int>')
-    print('  -> list of symbols separated by coma')
-    print('  -> start_datetime is in \'yyyy-mm-ddThh:mm:ss\' format')
+    print('Usage: python trading_eurusd_mac.py -s <symbols> -o <output_directory> '
+          + ' --stop_loss=<int> --take_profit=<int>'
+          + ' --short_window=<int> --long_window=<int>')
 
 
 def get_settings(argv):
-
     if len(argv) == 0:
         print_usage()
         exit(1)
 
-    long_opts = ['stop_loss=', 'take_profit='] + get_strategy_configuration_tools_long_options()
+    long_opts = get_strategy_configuration_tools_long_options()
 
     settings = args_parser.get_basic_settings(argv, long_opts)
 
@@ -70,7 +69,6 @@ def get_settings(argv):
 
 
 def main(argv):
-
     settings = get_settings(argv)
 
     heartbeat = 0
@@ -80,30 +78,18 @@ def main(argv):
     strategy_params = dict(stop_loss_pips=settings['stop_loss'], take_profit_pips=settings['take_profit'])
     strategy_params.update(get_strategy_configuration_tools(settings).get_strategy_params())
 
-    configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
-                                  execution_handler_name=SimulatedExecutionHandler)
-    configuration.set_option(Configuration.OPTION_CSV_DIR, settings['data_directory'])
+    configuration = Configuration(data_handler_name=OandaDataHandler,
+                                  execution_handler_name=OandaExecutionHandler)
+    configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
+    configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
 
-    backtest = Backtest(
-        settings['output_directory'],
-        settings['symbols'],
-        settings['initial_capital_usd'],
-        heartbeat,
-        settings['start_date'],
-        configuration,
-        DataHandlerFactory(),
-        ExecutionHandlerFactory(),
-        Portfolio,
-        get_strategy(),
-        FixedPositionSize(0.5),
-        TextLogger(events_log_file),
-        [Backtest.LOG_TYPE_EVENTS],
-        strategy_params,
-        'equity.csv'
-    )
+    trading = Trading(settings['output_directory'], settings['symbols'], settings['initial_capital_usd'], heartbeat,
+                      settings['start_date'], configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
+                      FixedPositionSize(0.5),
+                      TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
 
-    backtest.simulate_trading()
-    backtest.print_performance()
+    trading.run()
+    trading.print_performance()
 
 
 if __name__ == "__main__":
