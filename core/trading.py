@@ -18,10 +18,6 @@ import time
 
 
 class Trading(object):
-    """
-    Enscapsulates the settings and components for carrying out
-    an event-driven trading.
-    """
 
     LOG_TYPE_EVENTS = 'events'
 
