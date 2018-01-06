@@ -119,7 +119,11 @@ def run_backtest_instance(settings, events_log_file, heartbeat, short_window, lo
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        {'name': HistoricCSVDataHandler, 'csv_dir': settings['data_directory']},
+        {
+            'data_handler_name': HistoricCSVDataHandler,
+            'csv_dir': settings['data_directory'],
+            'execution_handler_name': SimulatedExecutionHandler,
+        },
         DataHandlerFactory(),
         SimulatedExecutionHandler,
         Portfolio,

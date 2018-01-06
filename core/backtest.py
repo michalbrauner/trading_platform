@@ -7,6 +7,7 @@ from strategies.strategy import Strategy
 from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
 from executionhandlers.execution import ExecutionHandler
+from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 
 try:
     import Queue as queue
@@ -32,36 +33,20 @@ class Backtest(object):
 
     def __init__(
             self, output_directory, symbol_list, initial_capital,
-            heartbeat, start_date, data_handler_settings, data_handler_factory,
-            execution_handler, portfolio, strategy, position_size_handler, logger, enabled_logs,
+            heartbeat, start_date, settings, data_handler_factory,
+            execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
             strategy_params_dict, equity_filename
     ):
-        # type: (str, [], int, int, datetime, {}, DataHandlerFactory, ExecutionHandler.__name__, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
+        # type: (str, [], int, int, datetime, {}, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
 
-        """
-        Initialises the backtest.
-
-        Parameters:
-        csv_dir - The hard root to the CSV data directory.
-        output_directory - The hard root to the directory where the output will be saved.
-        symbol_list - The list of symbol strings.
-        intial_capital - The starting capital for the portfolio.
-        heartbeat - Backtest "heartbeat" in seconds
-        start_date - The start datetime of the strategy.
-        data_handler - (Class) Handles the market data feed.
-        execution_handler - (Class) Handles the orders/fills for trades.
-        portfolio - (Class) Keeps track of portfolio current and prior positions.
-        strategy - (Class) Generates signals based on market data.
-        position_size_handler - (Class) Calculate position size for an order.
-        """
         self.output_directory = output_directory
         self.symbol_list = symbol_list
         self.initial_capital = initial_capital
         self.heartbeat = heartbeat
         self.start_date = start_date
-        self.data_handler_settings = data_handler_settings
+        self.settings = settings
         self.data_handler_factory = data_handler_factory
-        self.execution_handler_cls = execution_handler
+        self.execution_handler_factory = execution_handler_factory
         self.portfolio_cls = portfolio
         self.strategy_cls = strategy
         self.position_size_handler = position_size_handler
@@ -82,15 +67,15 @@ class Backtest(object):
 
     def _generate_trading_instances(self):
 
-        self.data_handler = self.data_handler_factory.create_from_settings(self.data_handler_settings, self.events,
-                                                                           self.symbol_list)
+        self.data_handler = self.data_handler_factory.create_from_settings(self.settings, self.events, self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
                                             self.output_directory, self.equity_filename, self.position_size_handler)
 
         self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
-        self.execution_handler = self.execution_handler_cls(self.data_handler, self.events)
+        self.execution_handler = self.execution_handler_factory.create_from_settings(self.settings, self.data_handler,
+                                                                                     self.events)
 
     def _run_backtest(self):
         """

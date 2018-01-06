@@ -6,6 +6,7 @@ from core.portfolio import Portfolio
 from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
+from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 import strategies.mac as mac
 import strategies.eurusd_daily_forecast as eurusd_daily_forecast
 from positionsizehandlers.fixed_position_size import FixedPositionSize
@@ -86,9 +87,13 @@ def main(argv):
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        {'name': HistoricCSVDataHandler, 'csv_dir': settings['data_directory']},
+        {
+            'data_handler_name': HistoricCSVDataHandler,
+            'csv_dir': settings['data_directory'],
+            'execution_handler_name': SimulatedExecutionHandler,
+        },
         DataHandlerFactory(),
-        SimulatedExecutionHandler,
+        ExecutionHandlerFactory(),
         Portfolio,
         get_strategy(),
         FixedPositionSize(0.5),

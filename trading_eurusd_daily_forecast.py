@@ -5,12 +5,14 @@ from core.portfolio import Portfolio
 
 from core.trading import Trading
 from datahandlers.data_handler_factory import DataHandlerFactory
-from executionhandlers.simulated_execution import SimulatedExecutionHandler
+from executionhandlers.oanda_execution import OandaExecutionHandler
+from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 import strategies.eurusd_daily_forecast as eurusd_daily_forecast
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 import args_parser
 import os
+from datahandlers.oanda_data_handler import OandaDataHandler
 
 
 def get_strategy_configuration_tools_long_options():
@@ -31,7 +33,6 @@ def print_usage():
 
 
 def get_settings(argv):
-
     if len(argv) == 0:
         print_usage()
         exit(1)
@@ -67,7 +68,6 @@ def get_settings(argv):
 
 
 def main(argv):
-
     settings = get_settings(argv)
 
     heartbeat = 0
@@ -80,24 +80,15 @@ def main(argv):
     account_id = os.environ.get('OANDA_API_ACCOUNT_ID')
     access_token = os.environ.get('OANDA_API_ACCESS_TOKEN')
 
-    trading = Trading(
-        settings['data_directory'],
-        settings['output_directory'],
-        settings['symbols'],
-        settings['initial_capital_usd'],
-        heartbeat,
-        settings['start_date'],
-        {'name': 'OandaDataHandler', 'account_id': account_id, 'access_token': access_token},
-        DataHandlerFactory(),
-        SimulatedExecutionHandler,
-        Portfolio,
-        get_strategy(),
-        FixedPositionSize(0.5),
-        TextLogger(events_log_file),
-        [Trading.LOG_TYPE_EVENTS],
-        strategy_params,
-        'equity.csv'
-    )
+    trading = Trading(settings['output_directory'], settings['symbols'], settings['initial_capital_usd'], heartbeat,
+                      settings['start_date'], {
+                          'data_handler_name': OandaDataHandler,
+                          'execution_handler_name': OandaExecutionHandler,
+                          'account_id': account_id,
+                          'access_token': access_token
+                      }, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
+                      FixedPositionSize(0.5),
+                      TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
 
     trading.run()
     trading.print_performance()

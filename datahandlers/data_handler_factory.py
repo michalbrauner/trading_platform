@@ -16,13 +16,13 @@ class DataHandlerFactory:
     def create_from_settings(self, settings, events, symbol_list):
         # type: ({}, queue.Queue, []) -> DataHandler
 
-        if settings['name'] == HistoricCSVDataHandler:
+        if settings['data_handler_name'] == HistoricCSVDataHandler:
             return self.create_historic_csv_data_handler(events, symbol_list, settings['csv_dir'])
 
-        if settings['name'] == OandaDataHandler:
+        if settings['data_handler_name'] == OandaDataHandler:
             return self.create_oanda_data_handler(events, symbol_list, settings['account_id'], settings['access_token'])
 
-        raise Exception('Unknown DataHandler for {}'.format(settings['name']))
+        raise Exception('Unknown DataHandler for {}'.format(settings['data_handler_name']))
 
     def create_historic_csv_data_handler(self, events, symbol_list, csv_dir):
         # type: (queue.Queue, [], str) -> DataHandler
