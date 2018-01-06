@@ -1,13 +1,12 @@
 import sys, getopt
-from sys import settrace
 
 from core.portfolio import Portfolio
 
 from core.backtest import Backtest
+from core.configuration import Configuration
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
-import strategies.mac as mac
 import strategies.eurusd_daily_forecast as eurusd_daily_forecast
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
@@ -81,17 +80,17 @@ def main(argv):
     strategy_params = dict(stop_loss_pips=settings['stop_loss'], take_profit_pips=settings['take_profit'])
     strategy_params.update(get_strategy_configuration_tools(settings).get_strategy_params())
 
+    configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
+                                  execution_handler_name=SimulatedExecutionHandler)
+    configuration.set_option(Configuration.OPTION_CSV_DIR, settings['data_directory'])
+
     backtest = Backtest(
         settings['output_directory'],
         settings['symbols'],
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        {
-            'data_handler_name': HistoricCSVDataHandler,
-            'csv_dir': settings['data_directory'],
-            'execution_handler_name': SimulatedExecutionHandler,
-        },
+        configuration,
         DataHandlerFactory(),
         ExecutionHandlerFactory(),
         Portfolio,

@@ -32,6 +32,9 @@ class OandaDataHandler(DataHandler):
         self.stream = stream
         self.stream.connect_to_stream()
 
+    def backtest_should_continue(self):
+        return self.continue_backtest
+
     def _get_new_bar(self, symbol):
         """
         Returns the latest bar from the data feed as a tuple of
@@ -186,4 +189,4 @@ class OandaDataHandler(DataHandler):
         self.events.put(MarketEvent())
 
     def get_position_in_percentage(self):
-        return 100
+        return 0

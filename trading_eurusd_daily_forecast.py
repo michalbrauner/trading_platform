@@ -1,9 +1,9 @@
 import sys, getopt
-from sys import settrace
 
 from core.portfolio import Portfolio
 
 from core.trading import Trading
+from core.configuration import Configuration
 from datahandlers.data_handler_factory import DataHandlerFactory
 from executionhandlers.oanda_execution import OandaExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
@@ -77,16 +77,13 @@ def main(argv):
     strategy_params = dict(stop_loss_pips=settings['stop_loss'], take_profit_pips=settings['take_profit'])
     strategy_params.update(get_strategy_configuration_tools(settings).get_strategy_params())
 
-    account_id = os.environ.get('OANDA_API_ACCOUNT_ID')
-    access_token = os.environ.get('OANDA_API_ACCESS_TOKEN')
+    configuration = Configuration(data_handler_name=OandaDataHandler,
+                                  execution_handler_name=OandaExecutionHandler)
+    configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
+    configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
 
     trading = Trading(settings['output_directory'], settings['symbols'], settings['initial_capital_usd'], heartbeat,
-                      settings['start_date'], {
-                          'data_handler_name': OandaDataHandler,
-                          'execution_handler_name': OandaExecutionHandler,
-                          'account_id': account_id,
-                          'access_token': access_token
-                      }, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
+                      settings['start_date'], configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
                       FixedPositionSize(0.5),
                       TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
 

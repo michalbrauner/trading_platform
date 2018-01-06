@@ -40,6 +40,9 @@ class HistoricCSVDataHandler(DataHandler):
 
         self._open_convert_csv_files()
 
+    def backtest_should_continue(self):
+        return self.continue_backtest
+
     def _open_convert_csv_files(self):
         """
         Opens the CSV files from the data directory, converting

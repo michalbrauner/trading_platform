@@ -2,6 +2,7 @@ from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from datahandlers.oanda_data_handler import OandaDataHandler
 from oanda.stream_factory import StreamFactory
 from datahandlers.oanda_data_handler import DataHandler
+from core.configuration import Configuration
 
 try:
     import Queue as queue
@@ -13,16 +14,19 @@ class DataHandlerFactory:
     def __init__(self):
         pass
 
-    def create_from_settings(self, settings, events, symbol_list):
-        # type: ({}, queue.Queue, []) -> DataHandler
+    def create_from_settings(self, configuration, events, symbol_list):
+        # type: (Configuration, queue.Queue, []) -> DataHandler
 
-        if settings['data_handler_name'] == HistoricCSVDataHandler:
-            return self.create_historic_csv_data_handler(events, symbol_list, settings['csv_dir'])
+        if configuration.data_handler_name == HistoricCSVDataHandler:
+            return self.create_historic_csv_data_handler(events, symbol_list,
+                                                         configuration.get_option(Configuration.OPTION_CSV_DIR))
 
-        if settings['data_handler_name'] == OandaDataHandler:
-            return self.create_oanda_data_handler(events, symbol_list, settings['account_id'], settings['access_token'])
+        if configuration.data_handler_name == OandaDataHandler:
+            return self.create_oanda_data_handler(events, symbol_list,
+                                                  configuration.get_option(Configuration.OPTION_ACCOUNT_ID),
+                                                  configuration.get_option(Configuration.OPTION_ACCESS_TOKEN))
 
-        raise Exception('Unknown DataHandler for {}'.format(settings['data_handler_name']))
+        raise Exception('Unknown DataHandler for {}'.format(configuration.data_handler_name))
 
     def create_historic_csv_data_handler(self, events, symbol_list, csv_dir):
         # type: (queue.Queue, [], str) -> DataHandler

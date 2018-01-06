@@ -3,6 +3,7 @@ import sys
 import datetime
 from datahandlers.data_handler_factory import DataHandlerFactory
 from core.portfolio import Portfolio
+from core.configuration import Configuration
 from strategies.strategy import Strategy
 from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
@@ -24,17 +25,17 @@ class Trading(object):
 
     LOG_TYPE_EVENTS = 'events'
 
-    def __init__(self, output_directory, symbol_list, initial_capital, heartbeat, start_date, settings,
+    def __init__(self, output_directory, symbol_list, initial_capital, heartbeat, start_date, configuration,
                  data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
                  strategy_params_dict, equity_filename):
-        # type: (str, [], int, int, datetime, {}, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
+        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
 
         self.output_directory = output_directory
         self.symbol_list = symbol_list
         self.heartbeat = heartbeat
-        self.settings = settings
+        self.configuration = configuration
         self.data_handler_factory = data_handler_factory
-        self.execution_handler_factory = settings['execution_handler_name']
+        self.execution_handler_factory = execution_handler_factory
         self.portfolio_cls = portfolio
         self.strategy_cls = strategy
         self.position_size_handler = position_size_handler
@@ -58,14 +59,15 @@ class Trading(object):
 
     def _generate_trading_instances(self):
 
-        self.data_handler = self.data_handler_factory.create_from_settings(self.settings, self.events,
+        self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events,
                                                                            self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
                                             self.output_directory, self.equity_filename, self.position_size_handler)
         self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
-        self.execution_handler = self.execution_handler_factory.create_from_settings(self.settings, self.data_handler,
+        self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
+                                                                                     self.data_handler,
                                                                                      self.events)
 
     def _run(self):
@@ -80,7 +82,7 @@ class Trading(object):
             self.write_progress()
 
             # Update the market bars
-            if self.data_handler.continue_backtest:
+            if self.data_handler.backtest_should_continue():
                 self.data_handler.update_bars()
             else:
                 break

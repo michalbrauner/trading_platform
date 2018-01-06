@@ -17,6 +17,10 @@ class DataHandler(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
+    def backtest_should_continue(self):
+        raise NotImplementedError("Should implement backtest_should_continue()")
+
+    @abstractmethod
     def get_latest_bar(self, symbol):
         """
         Returns the last bar updated.
@@ -62,3 +66,7 @@ class DataHandler(object):
         close, volume, open interest).
         """
         raise NotImplementedError("Should implement update_bars()")
+
+    @abstractmethod
+    def get_position_in_percentage(self):
+        raise NotImplementedError("Should implement get_position_in_percentage()")
