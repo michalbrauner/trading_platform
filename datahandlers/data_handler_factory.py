@@ -24,7 +24,8 @@ class DataHandlerFactory:
         if configuration.data_handler_name == OandaDataHandler:
             return self.create_oanda_data_handler(events, symbol_list,
                                                   configuration.get_option(Configuration.OPTION_ACCOUNT_ID),
-                                                  configuration.get_option(Configuration.OPTION_ACCESS_TOKEN))
+                                                  configuration.get_option(Configuration.OPTION_ACCESS_TOKEN),
+                                                  configuration.get_option(Configuration.OPTION_TIMEFRAME))
 
         raise Exception('Unknown DataHandler for {}'.format(configuration.data_handler_name))
 
@@ -33,10 +34,10 @@ class DataHandlerFactory:
 
         return HistoricCSVDataHandler(events, csv_dir, symbol_list)
 
-    def create_oanda_data_handler(self, events, symbol_list, account_id, access_token):
-        # type: (queue.Queue, [], str, str) -> DataHandler
+    def create_oanda_data_handler(self, events, symbol_list, account_id, access_token, timeframe):
+        # type: (queue.Queue, [], str, str, str) -> DataHandler
 
         stream_factory = StreamFactory()
         stream = stream_factory.create(account_id, access_token, symbol_list)
 
-        return OandaDataHandler(events, symbol_list, stream)
+        return OandaDataHandler(events, symbol_list, stream, timeframe)

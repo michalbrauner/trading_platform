@@ -5,10 +5,12 @@ import pytz
 class TimeFrame(object):
 
     TIMEFRAME_S5 = 'S5'
+    TIMEFRAME_M1 = 'M1'
     TIMEFRAME_M15 = 'M15'
 
     NUMBER_OF_SECONDS_IN_TIMEFRAMES = {
         TIMEFRAME_S5: 5,
+        TIMEFRAME_M1: 60,
         TIMEFRAME_M15: 60 * 15,
     }
 

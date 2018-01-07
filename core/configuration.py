@@ -7,6 +7,7 @@ class Configuration(object):
     OPTION_CSV_DIR = 'csv_dir'
     OPTION_ACCOUNT_ID = 'account_id'
     OPTION_ACCESS_TOKEN = 'access_token'
+    OPTION_TIMEFRAME = 'timeframe'
 
     def __init__(self, data_handler_name, execution_handler_name):
         """

@@ -1,7 +1,7 @@
 import unittest
 from mock import patch
 from datahandlers.oanda_data_handler import OandaDataHandler
-import oanda.stream
+from  timeframe.timeframe import TimeFrame
 from datetime import datetime
 
 try:
@@ -20,7 +20,7 @@ class TestOandaDataHandler(unittest.TestCase):
 
         stream.get_price.side_effect = self._get_prices_to_return()
 
-        data_handler = OandaDataHandler(events, [self.symbol_eur_usd], stream)
+        data_handler = OandaDataHandler(events, [self.symbol_eur_usd], stream, TimeFrame.TIMEFRAME_S5)
         data_handler.update_bars()
 
         self.assertEqual(

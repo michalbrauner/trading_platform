@@ -2,12 +2,11 @@ from __future__ import print_function
 import sys
 import datetime
 from datahandlers.data_handler_factory import DataHandlerFactory
-from core.portfolio import Portfolio
 from core.configuration import Configuration
-from strategies.strategy import Strategy
 from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
+from oanda.symbol_name_converter import SymbolNameConverter
 
 try:
     import Queue as queue
@@ -21,13 +20,28 @@ class Trading(object):
 
     LOG_TYPE_EVENTS = 'events'
 
-    def __init__(self, output_directory, symbol_list, initial_capital, heartbeat, start_date, configuration,
-                 data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
-                 strategy_params_dict, equity_filename):
-        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
+    def __init__(self, output_directory, symbol_list, heartbeat, configuration,
+                 data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger,
+                 enabled_logs, strategy_params_dict, equity_filename):
+        """
+
+        :type output_directory: str
+        :type symbol_list: []
+        :type heartbeat: int
+        :type configuration: Configuration
+        :type data_handler_factory: DataHandlerFactory
+        :type execution_handler_factory: ExecutionHandlerFactory
+        :type portfolio: Type[Portfolio]
+        :type strategy: Type[Strategy]
+        :type position_size_handler: PositionSizeHandler
+        :type logger: Logger
+        :type enabled_logs: bool
+        :type strategy_params_dict: {}
+        :type equity_filename: str
+        """
 
         self.output_directory = output_directory
-        self.symbol_list = symbol_list
+        self.symbol_list = SymbolNameConverter().convert_symbol_names_to_oanda_symbol_names(symbol_list)
         self.heartbeat = heartbeat
         self.configuration = configuration
         self.data_handler_factory = data_handler_factory
@@ -131,14 +145,10 @@ class Trading(object):
             self.log_message(iteration, log)
 
     def write_progress(self):
-        progress = int(round(self.data_handler.get_position_in_percentage(), 0))
-        print('Running backtest ({}%)'.format(progress), end='\r')
+        print('Trading...', end='\r')
         sys.stdout.flush()
 
     def _save_equity_and_generate_stats(self):
-        """
-        Outputs the strategy performance from the backtest.
-        """
         self.portfolio.create_equity_curve_dataframe()
         self.stats = self.portfolio.output_summary_stats()
 

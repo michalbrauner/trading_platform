@@ -47,6 +47,7 @@ def get_basic_settings(argv, long_opts):
 
 def validate_settings(settings):
     required_items = ['data_directory', 'symbols', 'start_date', 'output_directory']
+
     for required_item in required_items:
         settings = validate_settings_exists(settings, required_item)
 

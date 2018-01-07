@@ -10,9 +10,10 @@ from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 import strategies.mac as mac
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
-import args_parser
+import args_parser_trading as args_parser
 import os
 from datahandlers.oanda_data_handler import OandaDataHandler
+from timeframe.timeframe import TimeFrame
 
 
 def get_strategy_configuration_tools_long_options():
@@ -38,7 +39,7 @@ def get_settings(argv):
         print_usage()
         exit(1)
 
-    long_opts = get_strategy_configuration_tools_long_options()
+    long_opts = ['stop_loss=', 'take_profit='] + get_strategy_configuration_tools_long_options()
 
     settings = args_parser.get_basic_settings(argv, long_opts)
 
@@ -80,11 +81,13 @@ def main(argv):
 
     configuration = Configuration(data_handler_name=OandaDataHandler,
                                   execution_handler_name=OandaExecutionHandler)
+
     configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
     configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
+    configuration.set_option(Configuration.OPTION_TIMEFRAME, TimeFrame.TIMEFRAME_M1)
 
-    trading = Trading(settings['output_directory'], settings['symbols'], settings['initial_capital_usd'], heartbeat,
-                      settings['start_date'], configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
+    trading = Trading(settings['output_directory'], settings['symbols'], heartbeat,
+                      configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
                       FixedPositionSize(0.5),
                       TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
 

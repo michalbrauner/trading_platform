@@ -17,7 +17,7 @@ from datahandlers.data_handler import DataHandler
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events,  symbol_list, stream):
+    def __init__(self, events,  symbol_list, stream, timeframe):
         # type: (queue.Queue, [], OandaPriceStream) -> None
 
         self.events = events
@@ -27,7 +27,7 @@ class OandaDataHandler(DataHandler):
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
-        self.timeframe = TimeFrame.TIMEFRAME_S5
+        self.timeframe = timeframe
 
         self.stream = stream
         self.stream.connect_to_stream()
