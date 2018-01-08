@@ -180,3 +180,10 @@ class HistoricCSVDataHandler(DataHandler):
         number_of_items = float(self.symbol_position_info[symbol]['number_of_items'])
 
         return np.round(100 * (position / number_of_items), 2)
+
+    def get_number_of_bars(self, symbol):
+        """
+
+        :type symbol: str
+        """
+        return len(self.symbol_position_info[symbol]['number_of_items'])

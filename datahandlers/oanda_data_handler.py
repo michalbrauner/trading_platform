@@ -141,7 +141,7 @@ class OandaDataHandler(DataHandler):
             print("That symbol is not available in the historical data set.")
             raise
         else:
-            return bars_list[-1][0]
+            return bars_list[-1]['datetime']
 
     def get_latest_bar_value(self, symbol, val_type):
         """
@@ -154,7 +154,7 @@ class OandaDataHandler(DataHandler):
             print("That symbol is not available in the historical data set.")
             raise
         else:
-            return getattr(bars_list[-1][1], val_type)
+            return bars_list[-1][val_type]
 
     def get_latest_bars_values(self, symbol, val_type, N=1):
         """
@@ -167,7 +167,7 @@ class OandaDataHandler(DataHandler):
             print("That symbol is not available in the historical data set.")
             raise
         else:
-            return np.array([getattr(b[1], val_type) for b in bars_list])
+            return np.array([b[val_type] for b in bars_list])
 
     def update_bars(self):
         """
@@ -190,3 +190,10 @@ class OandaDataHandler(DataHandler):
 
     def get_position_in_percentage(self):
         return 0
+
+    def get_number_of_bars(self, symbol):
+        """
+
+        :type symbol: str
+        """
+        return len(self.symbol_data[symbol])

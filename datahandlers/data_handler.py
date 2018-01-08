@@ -70,3 +70,7 @@ class DataHandler(object):
     @abstractmethod
     def get_position_in_percentage(self):
         raise NotImplementedError("Should implement get_position_in_percentage()")
+
+    @abstractmethod
+    def get_number_of_bars(self, symbol):
+        raise NotImplementedError("Should implement get_number_of_bars()")
