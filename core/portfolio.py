@@ -11,6 +11,8 @@ from events.order_event import OrderEvent
 from events.close_pending_orders_event import ClosePendingOrdersEvent
 from perfomance import create_sharpe_ratio, create_drawdowns
 from stats import Stats
+from core.position import Position
+
 
 class Portfolio(object):
 
@@ -52,16 +54,20 @@ class Portfolio(object):
 
         self.all_positions = self.construct_all_positions()
         self.current_positions = dict( (k,v) for k, v in \
-                                       [(s, 0) for s in self.symbol_list] )
+                                       [(s, None) for s in self.symbol_list] )
         self.all_holdings = self.construct_all_holdings()
         self.current_holdings = self.construct_current_holdings()
+
+    def get_current_position(self, symbol):
+        # type: (str) -> Position
+        return self.current_positions[symbol]
 
     def construct_all_positions(self):
         """
         Constructs the positions list using the start_date
         to determine when the time index will begin.
         """
-        d = dict( (k,v) for k, v in [(s, 0) for s in self.symbol_list] )
+        d = dict( (k,v) for k, v in [(s, None) for s in self.symbol_list] )
         d['datetime'] = self.start_date
 
         return [d]
@@ -107,7 +113,7 @@ class Portfolio(object):
         dp['datetime'] = latest_datetime
 
         for s in self.symbol_list:
-            dp[s] = self.current_positions[s]
+            dp[s] = self.get_current_position(s)
 
         # Append the current positions
         self.all_positions.append(dp)
@@ -122,8 +128,12 @@ class Portfolio(object):
 
         for s in self.symbol_list:
             # Approximation to the real value
-            market_value = self.current_positions[s] * \
-                           self.bars.get_latest_bar_value(s, "close_bid")
+            position = self.get_current_position(s)
+            if position is not None:
+                market_value = position.get_quantity() * self.bars.get_latest_bar_value(s, "close_bid")
+            else:
+                market_value = 0
+
             dh[s] = market_value
             dh['total'] += market_value
 
@@ -147,8 +157,16 @@ class Portfolio(object):
         if fill.direction == 'SELL':
             fill_dir = -1
 
+        quantity = fill_dir * fill.quantity
+
         # Update positions list with new quantities
-        self.current_positions[fill.symbol] += fill_dir * fill.quantity
+        position = self.get_current_position(fill.symbol)
+        if position is None:
+            position = Position(fill.symbol, fill.trade_id, quantity)
+        else:
+            position.set_quantity(position.get_quantity() + quantity)
+
+        self.current_positions[fill.symbol] = position
 
     def update_holdings_from_fill(self, fill):
         """
@@ -198,7 +216,13 @@ class Portfolio(object):
         direction = signal.signal_type
         strength = signal.strength
         mkt_quantity = self.position_size_handler.get_position_size(self.current_holdings, self.current_positions)
-        cur_quantity = self.current_positions[symbol]
+
+        position = self.get_current_position(symbol)
+        if position is not None:
+            cur_quantity = self.get_current_position(symbol).get_quantity()
+        else:
+            cur_quantity = 0
+
         order_type = 'MKT'
 
         if direction == 'LONG' and cur_quantity == 0:

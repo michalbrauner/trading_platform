@@ -14,3 +14,4 @@ class TextLogger(Logger):
 
     def write(self, log):
         self.opened_file.write('{}\n'.format(log))
+        self.opened_file.flush()

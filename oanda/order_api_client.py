@@ -9,8 +9,9 @@ class OrderApiClient:
         self.account_id = account_id
         self.domain = 'api-fxpractice.oanda.com'
 
-    def create_new_order(self, units, instrument, stop_loss=None, take_profit=None):
+    def create_new_order(self, direction, units, instrument, stop_loss=None, take_profit=None):
         """
+        :type direction: str
         :type units: int
         :type instrument: str
         :type stop_loss: float
@@ -22,6 +23,9 @@ class OrderApiClient:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Content-Type': 'application/json'
         }
+
+        if (direction == 'SELL' and units > 0) or (direction == 'BUY' and units < 0):
+            units = units * -1
 
         data_order = {
             'units': units,

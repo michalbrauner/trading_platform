@@ -31,13 +31,18 @@ class OandaExecutionHandler(ExecutionHandler):
         """
         if event.type == 'ORDER':
             if event.order_type == 'MKT':
-                fill_event = FillEvent(
-                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None
-                )
-                self.events.put(fill_event)
-
                 order = OrderApiClient(self.account_id, self.access_token)
-                response = order.create_new_order(event.quantity, event.symbol, event.stop_loss, event.take_profit)
+                response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
+                                                  event.take_profit)
+
+                trade_id = int(response['orderFillTransaction']['id'])
+
+                fill_event = FillEvent(
+                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
+                    trade_id
+                )
+
+                self.events.put(fill_event)
 
     def update_stop_and_limit_orders(self, market_event):
         pass
