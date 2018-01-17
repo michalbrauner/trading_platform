@@ -4,7 +4,7 @@ class Position(object):
 
         :type symbol: str
         :type trade_id: int
-        :type quantity: int
+        :type quantity: float
         """
 
         self.symbol = symbol
@@ -12,9 +12,13 @@ class Position(object):
         self.quantity = quantity
 
     def get_quantity(self):
-        # type: () -> int
+        # type: () -> float
         return self.quantity
 
     def set_quantity(self, quantity):
-        # type: (int) -> None
+        # type: (float) -> None
         self.quantity = quantity
+
+    def get_trade_id(self):
+        # type: () -> int
+        return self.trade_id

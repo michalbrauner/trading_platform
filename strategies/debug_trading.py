@@ -88,14 +88,18 @@ class DebugTradingStrategy(Strategy):
                 elif short_signal and self.bought[s] == "LONG":
                     sig_dir = 'EXIT'
 
-                    signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0)
+                    current_position = self.portfolio.get_current_position(s)
+
+                    signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
                     self.events.put(signal)
                     self.bought[s] = 'OUT'
 
                 elif long_signal and self.bought[s] == "SHORT":
                     sig_dir = 'EXIT'
 
-                    signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0)
+                    current_position = self.portfolio.get_current_position(s)
+
+                    signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
                     self.events.put(signal)
                     self.bought[s] = 'OUT'
 
