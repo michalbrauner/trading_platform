@@ -8,6 +8,7 @@ except ImportError:
 import os
 import pandas as pd
 from events.order_event import OrderEvent
+from events.fill_event import FillEvent
 from events.close_pending_orders_event import ClosePendingOrdersEvent
 from perfomance import create_sharpe_ratio, create_drawdowns
 from stats import Stats
@@ -140,22 +141,22 @@ class Portfolio(object):
         # Append the current holdings
         self.all_holdings.append(dh)
 
-    def update_positions_from_fill(self, fill):
-        """
-        Takes a Fill object and updates the position matrix to
-        reflect the new position.
+    def get_fill_direction_koeficient(self, fill):
+        # type: (FillEvent) -> int
 
-        Parameters:
-        fill - The Fill object to update the positions with.
-        """
+        fill_direction_koeficient = 0
 
-        # Check whether the fill is a buy or sell
-        fill_dir = 0
         if fill.direction == 'BUY':
-            fill_dir = 1
+            fill_direction_koeficient = 1
 
-        if fill.direction == 'SELL':
-            fill_dir = -1
+        elif fill.direction == 'SELL':
+            fill_direction_koeficient = -1
+
+        return fill_direction_koeficient
+
+    def update_positions_from_fill(self, fill):
+
+        fill_dir = self.get_fill_direction_koeficient(fill)
 
         quantity = fill_dir * fill.quantity
 
@@ -166,7 +167,10 @@ class Portfolio(object):
         else:
             position.set_quantity(position.get_quantity() + quantity)
 
-        self.current_positions[fill.symbol] = position
+        if position.get_quantity() == 0:
+            self.current_positions[fill.symbol] = None
+        else:
+            self.current_positions[fill.symbol] = position
 
     def update_holdings_from_fill(self, fill):
         """
@@ -178,14 +182,10 @@ class Portfolio(object):
         """
 
         # Check whether the fill is a buy or sell
-        fill_dir = 0
-        if fill.direction == 'BUY':
-            fill_dir = 1
-        if fill.direction == 'SELL':
-            fill_dir = -1
+        fill_dir = self.get_fill_direction_koeficient(fill)
 
         # Update holdings list with new quantities
-        fill_cost = self.bars.get_latest_bar_value(fill.symbol, "close_bid")
+        fill_cost = self.bars.get_latest_bar_value(fill.symbol, 'close_bid')
         cost = fill_dir * fill_cost * fill.quantity
 
         self.current_holdings[fill.symbol] += cost
@@ -231,11 +231,7 @@ class Portfolio(object):
         if direction == 'SHORT' and cur_quantity == 0:
             order = OrderEvent(symbol, order_type, mkt_quantity, 'SELL', signal.stop_loss, signal.take_profit)
 
-        if direction == 'EXIT' and cur_quantity > 0:
-            order = OrderEvent(symbol, order_type, abs(cur_quantity), 'EXIT', None, None, None, None,
-                               signal.trade_id_to_exit)
-
-        if direction == 'EXIT' and cur_quantity < 0:
+        if direction == 'EXIT' and cur_quantity != 0:
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'EXIT', None, None, None, None,
                                signal.trade_id_to_exit)
 

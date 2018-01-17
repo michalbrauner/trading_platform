@@ -54,13 +54,12 @@ class OrderApiClient:
             s.close()
             raise Exception('Caught exception when connecting to API\n' + str(e))
 
-    def create_new_exit_order(self, direction, units, instrument, stop_loss=None, take_profit=None):
+    def create_new_exit_order(self, units, instrument, trade_id):
         """
         :type direction: str
         :type units: int
         :type instrument: str
-        :type stop_loss: float
-        :type take_profit: float
+        :type trade_id: int
         """
         s = requests.Session()
         url = 'https://{}/v3/accounts/{}/orders'.format(self.domain, self.account_id)
@@ -69,22 +68,15 @@ class OrderApiClient:
             'Content-Type': 'application/json'
         }
 
-        if (direction == 'SELL' and units > 0) or (direction == 'BUY' and units < 0):
-            units = units * -1
-
         data_order = {
             'units': units,
             'instrument': instrument,
-            'timeInForce': 'FOK',
             'type': 'MARKET',
-            'positionFill': 'DEFAULT'
+            # 'tradeClose ': {
+            #     'tradeID': trade_id,
+            #     'units': 'ALL'
+            # },
         }
-
-        if stop_loss is not None:
-            data_order['stopLossOnFill'] = {'price': stop_loss}
-
-        if take_profit is not None:
-            data_order['takeProfitOnFill '] = {'price': stop_loss}
 
         data = {'order': data_order}
 

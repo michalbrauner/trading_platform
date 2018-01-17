@@ -42,7 +42,7 @@ class OrderEvent(Event):
         """
         Return this order as a string
         """
-        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, Note=%s, TradeidToExit=%d' % \
+        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, Note=%s, TradeIdToExit=%d' % \
                (self.symbol, self.order_type, self.quantity, self.direction,
                 self.get_default_value_if_none_or_value(self.stop_loss, 0),
                 self.get_default_value_if_none_or_value(self.take_profit, 0),

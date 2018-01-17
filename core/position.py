@@ -22,3 +22,11 @@ class Position(object):
     def get_trade_id(self):
         # type: () -> int
         return self.trade_id
+
+    def is_long(self):
+        # type: () -> bool
+        return self.quantity > 0
+
+    def is_short(self):
+        # type: () -> bool
+        return self.quantity < 0

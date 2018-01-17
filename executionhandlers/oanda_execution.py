@@ -33,30 +33,30 @@ class OandaExecutionHandler(ExecutionHandler):
             order = OrderApiClient(self.account_id, self.access_token)
 
             if event.order_type == 'MKT':
-                response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
-                                                  event.take_profit)
 
-                trade_id = int(response['orderFillTransaction']['id'])
+                if event.direction == 'EXIT':
+                    response = order.create_new_exit_order(event.quantity, event.symbol, event.trade_id_to_exit)
+                else:
+                    response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
+                                                      event.take_profit)
+
+                if event.direction == 'EXIT':
+                    trade_id = event.trade_id_to_exit
+
+                    if response['side'] == 'sell':
+                        fill_direction_koeficient = -1
+                    else:
+                        fill_direction_koeficient = 1
+                else:
+                    trade_id = None
+                    fill_direction_koeficient = None
 
                 fill_event = FillEvent(
                     datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
-                    trade_id
+                    trade_id, fill_direction_koeficient
                 )
 
                 self.events.put(fill_event)
-            elif event.order_type == 'EXIT':
-                response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
-                                                  event.take_profit)
-
-                trade_id = int(response['orderFillTransaction']['id'])
-
-                fill_event = FillEvent(
-                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
-                    trade_id
-                )
-
-                self.events.put(fill_event)
-
 
     def update_stop_and_limit_orders(self, market_event):
         pass
