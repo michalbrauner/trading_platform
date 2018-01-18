@@ -54,7 +54,7 @@ class OrderApiClient:
             s.close()
             raise Exception('Caught exception when connecting to API\n' + str(e))
 
-    def create_new_exit_order(self, units, instrument, trade_id):
+    def create_new_exit_order(self, units, instrument, trade_id, trade_to_exit_direction):
         """
         :type direction: str
         :type units: int
@@ -68,14 +68,17 @@ class OrderApiClient:
             'Content-Type': 'application/json'
         }
 
+        if (trade_to_exit_direction == 'SELL' and units < 0) or (trade_to_exit_direction == 'BUY' and units > 0):
+            units = units * -1
+
         data_order = {
             'units': units,
             'instrument': instrument,
             'type': 'MARKET',
-            # 'tradeClose ': {
-            #     'tradeID': trade_id,
-            #     'units': 'ALL'
-            # },
+            'tradeClose ': {
+                'tradeID': trade_id,
+                'units': 'ALL'
+            },
         }
 
         data = {'order': data_order}

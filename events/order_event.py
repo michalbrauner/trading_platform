@@ -2,14 +2,9 @@ from events.event import Event
 
 
 class OrderEvent(Event):
-    """
-    Handles the event of sending an Order to an execution system.
-    The order contains a symbol (e.g. GOOG), a type (market, limit or stop),
-    quantity and a direction.
-    """
 
     def __init__(self, symbol, order_type, quantity, direction, stop_loss=None, take_profit=None, price=None,
-                 note=None, trade_id_to_exit=None):
+                 note=None, trade_id_to_exit=None, trade_to_exit_direction=None):
         """
         Initialises the order type, setting whether it is
         a Market order ('MKT'), Limit order ('LMT'), Stop order ('STP') or Exit ('EXIT'), has
@@ -25,6 +20,7 @@ class OrderEvent(Event):
         price - The price for stop or limit orders
         note
         trade_id_to_exit
+        trade_to_exit_direction
         """
 
         self.type = 'ORDER'
@@ -37,18 +33,21 @@ class OrderEvent(Event):
         self.price = price
         self.note = note
         self.trade_id_to_exit = trade_id_to_exit
+        self.trade_to_exit_direction = trade_to_exit_direction
 
     def get_as_string(self):
         """
         Return this order as a string
         """
-        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, Note=%s, TradeIdToExit=%d' % \
+        return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, ' \
+               'Note=%s, TradeIdToExit=%d, TradeToExitDirection=%s' % \
                (self.symbol, self.order_type, self.quantity, self.direction,
                 self.get_default_value_if_none_or_value(self.stop_loss, 0),
                 self.get_default_value_if_none_or_value(self.take_profit, 0),
                 self.get_default_value_if_none_or_value(self.price, 0),
                 self.get_default_value_if_none_or_value(self.note, ''),
-                self.get_default_value_if_none_or_value(self.trade_id_to_exit, 0))
+                self.get_default_value_if_none_or_value(self.trade_id_to_exit, 0),
+                self.get_default_value_if_none_or_value(self.trade_to_exit_direction, ''))
 
     def get_default_value_if_none_or_value(self, value, default_value):
         if value is None:

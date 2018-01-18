@@ -35,14 +35,16 @@ class OandaExecutionHandler(ExecutionHandler):
             if event.order_type == 'MKT':
 
                 if event.direction == 'EXIT':
-                    response = order.create_new_exit_order(event.quantity, event.symbol, event.trade_id_to_exit)
+                    response = order.create_new_exit_order(event.quantity, event.symbol, event.trade_id_to_exit,
+                                                           event.trade_to_exit_direction)
                 else:
                     response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
                                                       event.take_profit)
 
+                trade_id = int(response['orderFillTransaction']['orderID'])
                 fill_event = FillEvent(
                     datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
-                    event.trade_id_to_exit
+                    trade_id
                 )
 
                 self.events.put(fill_event)

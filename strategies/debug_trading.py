@@ -64,8 +64,9 @@ class DebugTradingStrategy(Strategy):
 
                 long_signal = signal_from_file == 'long'
                 short_signal = signal_from_file == 'short'
+                exit_signal = signal_from_file == 'exit'
 
-                signal_generated = self.calculate_exit_signals(short_signal, long_signal, s, bar_date, dt)
+                signal_generated = self.calculate_exit_signals(short_signal, long_signal, exit_signal, s, bar_date, dt)
 
                 if signal_generated is False:
                     self.calculate_new_signals(short_signal, long_signal, s, bar_date, bar_price, dt)
@@ -100,22 +101,14 @@ class DebugTradingStrategy(Strategy):
 
         return False
 
-    def calculate_exit_signals(self, short_signal, long_signal, s, bar_date, dt):
+    def calculate_exit_signals(self, short_signal, long_signal, exit_signal, s, bar_date, dt):
 
         current_position = self.portfolio.get_current_position(s)
 
-        if short_signal and current_position is not None and current_position.is_long():
-            sig_dir = 'EXIT'
+        if current_position is not None and (
+                (current_position.is_long() and short_signal) or
+                (current_position.is_short() and long_signal) or exit_signal):
 
-            current_position = self.portfolio.get_current_position(s)
-
-            signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
-            self.events.put(signal)
-            self.bought[s] = 'OUT'
-
-            return True
-
-        elif long_signal and current_position is not None and current_position.is_short():
             sig_dir = 'EXIT'
 
             current_position = self.portfolio.get_current_position(s)

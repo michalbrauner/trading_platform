@@ -218,9 +218,14 @@ class Portfolio(object):
         strength = signal.strength
         mkt_quantity = self.position_size_handler.get_position_size(self.current_holdings, self.current_positions)
 
+        position_direction = None
         position = self.get_current_position(symbol)
         if position is not None:
             cur_quantity = self.get_current_position(symbol).get_quantity()
+            if position.is_long():
+                position_direction = 'BUY'
+            elif position.is_short():
+                position_direction = 'SELL'
         else:
             cur_quantity = 0
 
@@ -234,7 +239,7 @@ class Portfolio(object):
 
         if direction == 'EXIT' and cur_quantity != 0:
             order = OrderEvent(symbol, order_type, abs(cur_quantity), 'EXIT', None, None, None, None,
-                               signal.trade_id_to_exit)
+                               signal.trade_id_to_exit, position_direction)
 
         return order
 
