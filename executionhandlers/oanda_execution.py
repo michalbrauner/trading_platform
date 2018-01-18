@@ -40,20 +40,9 @@ class OandaExecutionHandler(ExecutionHandler):
                     response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
                                                       event.take_profit)
 
-                if event.direction == 'EXIT':
-                    trade_id = event.trade_id_to_exit
-
-                    if response['side'] == 'sell':
-                        fill_direction_koeficient = -1
-                    else:
-                        fill_direction_koeficient = 1
-                else:
-                    trade_id = None
-                    fill_direction_koeficient = None
-
                 fill_event = FillEvent(
                     datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
-                    trade_id, fill_direction_koeficient
+                    event.trade_id_to_exit
                 )
 
                 self.events.put(fill_event)

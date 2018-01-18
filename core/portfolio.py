@@ -141,19 +141,6 @@ class Portfolio(object):
         # Append the current holdings
         self.all_holdings.append(dh)
 
-    def get_fill_direction_koeficient(self, fill):
-        # type: (FillEvent) -> int
-
-        fill_direction_koeficient = 0
-
-        if fill.direction == 'BUY':
-            fill_direction_koeficient = 1
-
-        elif fill.direction == 'SELL':
-            fill_direction_koeficient = -1
-
-        return fill_direction_koeficient
-
     def update_positions_from_fill(self, fill):
 
         fill_dir = self.get_fill_direction_koeficient(fill)
@@ -173,13 +160,6 @@ class Portfolio(object):
             self.current_positions[fill.symbol] = position
 
     def update_holdings_from_fill(self, fill):
-        """
-        Takes a Fill object and updates the holdings matrix to
-        reflect the holdings value.
-
-        Parameters:
-        fill - The Fill object to update the holdings with.
-        """
 
         # Check whether the fill is a buy or sell
         fill_dir = self.get_fill_direction_koeficient(fill)
@@ -193,14 +173,35 @@ class Portfolio(object):
         self.current_holdings['cash'] -= (cost + fill.commission)
         self.current_holdings['total'] -= (cost + fill.commission)
 
+    def get_fill_direction_koeficient(self, fill):
+        # type: (FillEvent) -> int
+
+        fill_direction_koeficient = 0
+
+        if fill.direction == 'BUY':
+            fill_direction_koeficient = 1
+
+        elif fill.direction == 'SELL':
+            fill_direction_koeficient = -1
+
+        elif fill.direction == 'EXIT':
+            position = self.get_current_position(fill.symbol)
+            if position is not None:
+                if position.is_long():
+                    fill_direction_koeficient = -1
+                elif position.is_short():
+                    fill_direction_koeficient = 1
+
+        return fill_direction_koeficient
+
     def update_fill(self, event):
         """
         Updates the portfolio current positions and holdings
         from a FillEvent.
         """
         if event.type == 'FILL':
-            self.update_positions_from_fill(event)
             self.update_holdings_from_fill(event)
+            self.update_positions_from_fill(event)
 
     def generate_naive_order(self, signal):
         """

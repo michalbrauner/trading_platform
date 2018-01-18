@@ -10,11 +10,8 @@ class FillEvent(Event):
     the commission of the trade from the brokerage.
     """
 
-    DIRECTION_KOEFICIENT_LONG = 1
-    DIRECTION_KOEFICIENT_SHORT = 1
-
     def __init__(self, timeindex, symbol, exchange, quantity,
-                 direction, fill_cost, commission=None, trade_id=None, fill_direction_koeficient=None):
+                 direction, fill_cost, commission=None, trade_id=None):
         """
 
         :type timeindex: datetime
@@ -25,7 +22,6 @@ class FillEvent(Event):
         :type fill_cost: float|None
         :type commission: float|None
         :type trade_id: int|None
-        :type fill_direction_koeficient: int|None
         """
         self.type = 'FILL'
         self.timeindex = timeindex
@@ -33,7 +29,6 @@ class FillEvent(Event):
         self.exchange = exchange
         self.quantity = quantity
         self.direction = direction
-        self.fill_direction_koeficient = fill_direction_koeficient
 
         if commission is None:
             self.commission = 0
@@ -50,17 +45,9 @@ class FillEvent(Event):
         else:
             self.trade_id = trade_id
 
-        if fill_direction_koeficient is None:
-            if self.direction == 'BUY':
-                self.fill_direction_koeficient = 1
-            else:
-                self.fill_direction_koeficient = -1
-        else:
-            self.fill_direction_koeficient = fill_direction_koeficient
-
     def get_as_string(self):
-        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, TradeId: %d, FillDirectionKoeficient: %d' % \
+        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, TradeId: %d' % \
                (
                    self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,
-                   self.trade_id, self.fill_direction_koeficient
+                   self.trade_id
                )
