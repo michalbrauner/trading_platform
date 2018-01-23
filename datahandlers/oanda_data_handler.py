@@ -32,6 +32,10 @@ class OandaDataHandler(DataHandler):
         self.stream = stream
         self.stream.connect_to_stream()
 
+    def get_symbol_list(self):
+        # type: () -> []
+        return self.symbol_list
+
     def backtest_should_continue(self):
         return self.continue_backtest
 

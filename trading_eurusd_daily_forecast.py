@@ -82,10 +82,10 @@ def main(argv):
     configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
     configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
 
-    trading = Trading(settings['output_directory'], settings['symbols'], settings['initial_capital_usd'], heartbeat,
-                      settings['start_date'], configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
-                      FixedPositionSize(0.5),
-                      TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
+    trading = Trading(settings['output_directory'], settings['symbols'], heartbeat,
+                      configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
+                      FixedPositionSize(0.01), TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params,
+                      'equity.csv')
 
     trading.run()
     trading.print_performance()

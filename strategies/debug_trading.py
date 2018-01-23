@@ -111,8 +111,6 @@ class DebugTradingStrategy(Strategy):
 
             sig_dir = 'EXIT'
 
-            current_position = self.portfolio.get_current_position(s)
-
             signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
             self.events.put(signal)
             self.bought[s] = 'OUT'
