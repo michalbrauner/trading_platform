@@ -169,9 +169,8 @@ class EurUsdDailyForecastStrategy(Strategy):
 
                 signal_generated = self.calculate_exit_signals(symbol, bar_date, prediction, datetime_now)
 
-                if signal_generated is False:
-                    self.calculate_new_signals(symbol, bar_date, bar_price, prediction, sma_short, sma_long,
-                                               datetime_now)
+                self.calculate_new_signals(symbol, bar_date, bar_price, prediction, sma_short, sma_long,
+                                           datetime_now)
 
     def calculate_new_signals(self, symbol, bar_date, bar_price, prediction, sma_short, sma_long, datetime_now):
 
