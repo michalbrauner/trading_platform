@@ -176,8 +176,10 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         current_position = self.portfolio.get_current_position(symbol)
 
+        sma_enabled = sma_short > 0 and sma_long > 0
+
         if current_position is None:
-            if prediction > 0 and sma_short > sma_long:
+            if prediction > 0 and ((sma_enabled and sma_short > sma_long) or not sma_enabled):
                 direction = 'LONG'
 
                 self.bought[symbol] = direction
@@ -190,7 +192,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
                 return True
 
-            if prediction < 0 and sma_short < sma_long:
+            if prediction < 0 and ((sma_enabled and sma_short < sma_long) or not sma_enabled):
                 direction = 'SHORT'
 
                 self.bought[symbol] = direction
