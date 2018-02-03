@@ -3,6 +3,7 @@ from __future__ import print_function
 import datetime
 import args_parser
 import os.path
+import csv
 
 from strategies.configuration_tools import ConfigurationTools
 
@@ -66,7 +67,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         self.trained_model = trained_model_file
         self.train_data = train_data
-        self.model_output_file = model_output_file
+        self.model_output_directory = model_output_file
 
         if trained_model_file is None and train_data is None:
             raise Exception('Either trained_model_file or train_data need to be defined')
@@ -103,20 +104,65 @@ class EurUsdDailyForecastStrategy(Strategy):
         x = eurusd_ret[['Lag1', 'Lag2']]
         y = eurusd_ret['Direction']
 
-        model = self.get_model()
-        cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
-        # cross_validation = KFold(model, self.model_output_file, 10)
+        models = self.get_models_to_analyze()
+        model_to_return = None
 
-        # tuned_parameters = [{
-        #     'kernel': ['rbf'],
-        #     'gamma': [1e-3, 1e-4],
-        #     'C': [1, 10, 100, 1000]
-        #  }]
-        #
-        # cross_validation = GridSearch(model, self.model_output_file, tuned_parameters, 10)
-        cross_validation.process(x, y)
+        models_output_summary_file = self.model_output_directory + os.path.sep + 'summary.csv'
+        models_output_summary_file_opened = open(models_output_summary_file, 'wb')
+        models_output_summary_file_csv_writer = csv.writer(models_output_summary_file_opened, delimiter=',')
 
-        return model
+        for model in models:
+
+            model_output_directory = self.model_output_directory + os.path.sep + model.__class__.__name__
+
+            if not os.path.exists(model_output_directory):
+                os.mkdir(model_output_directory)
+
+            model_output_filename = model_output_directory + os.path.sep + 'model.pkl'
+
+            cross_validation = TrainTestSplit(model, model_output_filename, models_output_summary_file_csv_writer, 0.8,
+                                              42)
+
+            # cross_validation = KFold(model, self.model_output_file, 10)
+
+            # tuned_parameters = [{
+            #     'kernel': ['rbf'],
+            #     'gamma': [1e-3, 1e-4],
+            #     'C': [1, 10, 100, 1000]
+            #  }]
+            #
+            # cross_validation = GridSearch(model, self.model_output_file, tuned_parameters, 10)
+            cross_validation.process(x, y)
+
+            if model_to_return is None:
+                model_to_return = model
+
+            models_output_summary_file_opened.flush()
+
+        models_output_summary_file_opened.close()
+
+        return model_to_return
+
+    @staticmethod
+    def get_models_to_analyze():
+        models = list()
+
+        models.append(RandomForestClassifier(n_estimators=1000, criterion='gini', max_depth=None, min_samples_split=2,
+                                             min_samples_leaf=1, max_features='auto', bootstrap=True, oob_score=False,
+                                             n_jobs=1, random_state=None, verbose=0))
+
+        models.append(SVC(C=1000000.0, cache_size=200, class_weight=None, coef0=0.0, degree=3,
+                    gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
+                    shrinking=True, tol=0.001, verbose=False))
+
+        models.append(SVC())
+
+        models.append(LogisticRegression())
+        models.append(QuadraticDiscriminantAnalysis())
+        models.append(LinearDiscriminantAnalysis())
+        models.append(LinearSVC())
+
+        return models
 
     def get_model(self):
         # model = RandomForestClassifier(n_estimators=1000, criterion='gini', max_depth=None, min_samples_split=2,
@@ -176,7 +222,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         current_position = self.portfolio.get_current_position(symbol)
 
-        sma_enabled = sma_short > 0 and sma_long > 0
+        sma_enabled = self.sma_short_period > 0 and self.sma_long_period > 0
 
         if current_position is None:
             if prediction > 0 and ((sma_enabled and sma_short > sma_long) or not sma_enabled):
