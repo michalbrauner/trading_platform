@@ -193,8 +193,9 @@ class EurUsdDailyForecastStrategy(Strategy):
 
             self.bar_indexes[symbol] += 1
 
-            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max(self.sma_long_period,
-                                                                               self.sma_short_period):
+            max_sma_period = max(self.sma_long_period, self.sma_short_period)
+
+            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max_sma_period:
 
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
@@ -210,8 +211,18 @@ class EurUsdDailyForecastStrategy(Strategy):
                 )
 
                 prediction = self.model.predict([prediction_series])
-                sma_short = self.calculate_sma(symbol, self.sma_short_period)
-                sma_long = self.calculate_sma(symbol, self.sma_long_period)
+
+                sma_enabled = self.sma_short_period > 0 and self.sma_long_period > 0
+
+                if sma_enabled:
+
+                    bars = self.bars.get_latest_bars_values(symbol, 'close_bid', N=max_sma_period)
+
+                    sma_short = self.calculate_sma(self.sma_short_period, bars)
+                    sma_long = self.calculate_sma(self.sma_long_period, bars)
+                else:
+                    sma_short = 0
+                    sma_long = 0
 
                 signal_generated = self.calculate_exit_signals(symbol, bar_date, prediction, datetime_now)
 
@@ -269,11 +280,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         return False
 
-    def calculate_sma(self, symbol, period):
-        bars = self.bars.get_latest_bars_values(
-            symbol, 'close_bid', N=period
-        )
-
+    def calculate_sma(self, period, bars):
         return np.mean(bars[-period:])
 
 
