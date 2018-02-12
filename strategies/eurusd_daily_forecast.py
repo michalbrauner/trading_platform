@@ -1,11 +1,8 @@
 from __future__ import print_function
 
 import datetime
-import args_parser
 import os.path
 import csv
-
-from strategies.configuration_tools import ConfigurationTools
 
 import pandas as pd
 from sklearn.externals import joblib
@@ -15,14 +12,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.ensemble import RandomForestClassifier
 from strategies.daily_forecast.optimization_and_validation.train_test_split import TrainTestSplit
-from strategies.daily_forecast.optimization_and_validation.kfold import KFold
-from strategies.daily_forecast.optimization_and_validation.grid_search import GridSearch
 
 from events.signal_event import SignalEvent
 from strategy import Strategy
 from machine_learning.lagged_series import create_lagged_series
 from core.portfolio import Portfolio
 from datahandlers.data_handler import DataHandler
+import argparser_tools.basic
 
 import numpy as np
 
@@ -280,78 +276,32 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         return False
 
-    def calculate_sma(self, period, bars):
+    @staticmethod
+    def calculate_sma(period, bars):
         return np.mean(bars[-period:])
 
-
-class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
-    def __init__(self, settings):
-        self.settings = settings
-        self.set_default_values()
-
     @staticmethod
-    def get_long_opts():
-        return ['trained_model_file=', 'train_data=', 'model_output_file=',
-                'model_start_date=', 'short_window=', 'long_window=']
-
-    def get_strategy_params(self):
+    def get_strategy_params(args_namespace):
         return dict(
-            trained_model_file=self.settings['trained_model_file'],
-            train_data=self.settings['train_data'],
-            model_output_file=self.settings['model_output_file'],
-            model_start_date=self.settings['model_start_date'],
-            sma_short_period=self.settings['short_window'],
-            sma_long_period=self.settings['long_window']
+            trained_model_file=args_namespace.trained_model_file,
+            train_data=args_namespace.train_data,
+            model_output_file=args_namespace.model_output_file,
+            model_start_date=args_namespace.model_start_date,
+            sma_short_period=args_namespace.short_window,
+            sma_long_period=args_namespace.long_window
         )
 
-    def use_argument_if_valid(self, option, argument_value):
-        if option == '--trained_model_file':
-            self.settings['trained_model_file'] = argument_value
-        elif option == '--train_data':
-            self.settings['train_data'] = argument_value
-        elif option == '--model_output_file':
-            self.settings['model_output_file'] = argument_value
-        elif option == '--model_start_date':
-            self.settings['model_start_date'] = argument_value
-        elif option == '--short_window':
-            self.settings['short_window'] = argument_value
-        elif option == '--long_window':
-            self.settings['long_window'] = argument_value
+    @staticmethod
+    def create_argument_parser():
+        # () -> argparse.ArgumentParser
 
-        return self.settings
+        parser = argparser_tools.basic.create_basic_argument_parser()
+        parser = argparser_tools.basic.with_sl_and_tp(parser)
+        parser = argparser_tools.basic.with_sma_short_and_long(parser)
 
-    def set_default_values(self):
-        if 'trained_model_file' not in self.settings:
-            self.settings['trained_model_file'] = None
+        parser.add_argument('--trained_model_file', type=argparser_tools.basic.existing_file)
+        parser.add_argument('--train_data', type=argparser_tools.basic.existing_file)
+        parser.add_argument('--model_output_file')
+        parser.add_argument('--model_start_date', type=argparser_tools.basic.datetime_argument)
 
-        if 'train_data' not in self.settings:
-            self.settings['train_data'] = None
-
-        if 'model_output_file' not in self.settings:
-            self.settings['model_output_file'] = None
-
-        if 'model_start_date' not in self.settings:
-            self.settings['model_start_date'] = None
-
-        if 'short_window' not in self.settings:
-            self.settings['short_window'] = None
-
-        if 'long_window' not in self.settings:
-            self.settings['long_window'] = None
-
-        return self.settings
-
-    def valid_arguments_and_convert_if_necessarily(self):
-        if self.settings['trained_model_file'] is not None \
-                and os.path.isfile(self.settings['trained_model_file']) is False:
-            raise Exception('trained_model_file does not exist')
-
-        if self.settings['train_data'] is not None and os.path.isfile(self.settings['train_data']) is False:
-            raise Exception('train_data does not exist')
-
-        args_parser.validate_settings_is_datetime_and_set_to_datetime_object(self.settings, 'model_start_date', False)
-
-        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'short_window')
-        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'long_window')
-
-        return self.settings
+        return parser

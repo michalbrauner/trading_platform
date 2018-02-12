@@ -1,117 +1,76 @@
-import getopt, sys
-
 from core.portfolio import Portfolio
 
 from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
-from strategies.mac import MovingAverageCrossStrategy
 from strategies.eurusd_daily_forecast import EurUsdDailyForecastStrategy
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
-import args_parser
 import csv, os
 import itertools
-import string
 import numpy as np
 from datahandlers.data_handler_factory import DataHandlerFactory
 from core.configuration import Configuration
+import argparser_tools.basic
+import argparser_tools.optimization
 
 
-def print_usage():
-    print('Usage: python optimize_eurusd_daily_forecast.py -d <data_directory> -s <symbols> -c <initial_capital_usd> '
-          + ' -b <start_datetime> -o <output_directory> --sl_min <int> --sl_max <int> --sl_step <int>'
-          + ' --tp_min <int> --tp_max <int> --tp_step <int>'
-          + ' --short-window-min <int> --short-window-max <int> --short-window-step <int> '
-          + ' --long-window-min <int> --long-window-max <int> --long-window-step <int> '
-          + ' --trained_model_file <string> '
-  )
-    print('  -> list of symbols separated by coma')
-    print('  -> start_datetime is in \'yyyy-mm-ddThh:mm:ss\' format')
+def get_argument_parser():
+    # () -> argparse.ArgumentParser
+
+    parser = argparser_tools.basic.create_basic_argument_parser()
+    parser = argparser_tools.optimization.with_sma_short_and_long(parser)
+    parser = argparser_tools.optimization.with_sl_and_tp(parser)
+
+    parser.add_argument('--trained_model_file', type=argparser_tools.basic.existing_file)
+
+    return parser
 
 
-def get_settings(argv):
+def main():
 
-    if len(argv) == 0:
-        print_usage()
-        exit(1)
-
-    long_opts = [
-        'sl_min=', 'sl_max=', 'sl_step=', 'tp_min=', 'tp_max=', 'tp_step=',
-        'short_window_min=', 'short_window_max=', 'short_window_step=',
-        'long_window_min=', 'long_window_max=', 'long_window_step=',
-        'trained_model_file='
-    ]
-
-    settings = args_parser.get_basic_settings(argv, long_opts)
-
-    if settings['print_help']:
-        print_usage()
-        exit(0)
-
-    opts, args = getopt.getopt(argv, args_parser.BASIC_ARGS, long_opts)
-
-    for opt, arg in opts:
-        settings_name = string.replace(opt, '--', '')
-        settings[settings_name] = arg
-
-    validate_as_number = ['sl_min', 'sl_max', 'sl_step', 'tp_min', 'tp_max', 'tp_step',
-                          'short_window_min', 'short_window_max', 'short_window_step', 'long_window_min',
-                          'long_window_max', 'long_window_step']
-
-    for argument in validate_as_number:
-        args_parser.validate_settings_is_number_and_set_to_int(settings, argument)
-
-    if os.path.isfile(settings['trained_model_file']) is False:
-        raise Exception('trained_model_file does not exist')
-
-    return settings
-
-
-def main(argv):
-
-    settings = get_settings(argv)
+    args_namespace = get_argument_parser().parse_args()
 
     heartbeat = 0
 
-    csv_file = open('{}/optimization.csv'.format(settings['output_directory']), 'wb')
+    csv_file = open('{}/optimization.csv'.format(args_namespace.output_directory), 'wb')
     csv_file_writer = csv.writer(csv_file, delimiter=',')
     csv_file_writer.writerow(['SL', 'TP', 'SMA_short', 'SMA_long', 'Total Return',
                               'Sharpe Ratio', 'Max Drawdown', 'Drawdown Duration'])
 
     values_to_try = [
-        range(settings['sl_min'], settings['sl_max'] + 1, settings['sl_step']),
-        range(settings['tp_min'], settings['tp_max'] + 1, settings['tp_step']),
-        range(settings['short_window_min'], settings['short_window_max'] + 1, settings['short_window_step']),
-        range(settings['long_window_min'], settings['long_window_max'] + 1, settings['long_window_step']),
+        range(args_namespace.sl_min, args_namespace.sl_max + 1, args_namespace.sl_step),
+        range(args_namespace.tp_min, args_namespace.tp_max + 1, args_namespace.tp_step),
+        range(args_namespace.short_window_min, args_namespace.short_window_max + 1, args_namespace.short_window_step),
+        range(args_namespace.long_window_min, args_namespace.long_window_max + 1, args_namespace.long_window_step),
     ]
 
     total_test_to_run = np.product([len(data) for data in values_to_try])
     print('Total number of tests to run: %d' % total_test_to_run)
 
     for parameters in itertools.product(*values_to_try):
-        run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, settings, parameters[0], parameters[1],
+        run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, args_namespace, parameters[0], parameters[1],
                                           parameters[2], parameters[3])
 
     csv_file.close()
 
 
-def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, settings, sl, tp, short_window,
+def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, args_namespace, sl, tp, short_window,
                                       long_window):
-    events_log_file = '{}/events_{}_{}_{}_{}.log'.format(settings['output_directory'], sl, tp, short_window,
+    events_log_file = '{}/events_{}_{}_{}_{}.log'.format(args_namespace.output_directory, sl, tp, short_window,
                                                          long_window)
 
     equity_filename = 'equity_{}_{}_{}_{}.csv'.format(sl, tp, short_window, long_window)
 
     print('Running backtest for: SL=%d, TP=%d, SMA_short=%d, SMA_long=%d' % (sl, tp, short_window, long_window))
 
-    stats = run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_window, long_window,
-                                  equity_filename, settings['trained_model_file'])
+    stats = run_backtest_instance(args_namespace, events_log_file, heartbeat, sl, tp, short_window, long_window,
+                                  equity_filename, args_namespace.trained_model_file)
 
     files_to_remove = [
         events_log_file,
-        '{}/{}'.format(settings['output_directory'], equity_filename)
+        '{}/{}'.format(args_namespace.output_directory, equity_filename)
     ]
 
     for file_name in files_to_remove:
@@ -135,7 +94,7 @@ def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, sett
     print('')
 
 
-def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_window, long_window, equity_filename,
+def run_backtest_instance(args_namespace, events_log_file, heartbeat, sl, tp, short_window, long_window, equity_filename,
                           trained_model_file):
 
     strategy_params = dict(
@@ -148,14 +107,14 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_wi
 
     configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
                                   execution_handler_name=SimulatedExecutionHandler)
-    configuration.set_option(Configuration.OPTION_CSV_DIR, settings['data_directory'])
+    configuration.set_option(Configuration.OPTION_CSV_DIR, args_namespace.data_directory)
 
     backtest = Backtest(
-        settings['output_directory'],
-        settings['symbols'],
-        settings['initial_capital_usd'],
+        args_namespace.output_directory,
+        args_namespace.symbols,
+        args_namespace.initial_capital_usd,
         heartbeat,
-        settings['start_date'],
+        args_namespace.start_date,
         configuration,
         DataHandlerFactory(),
         ExecutionHandlerFactory(),
@@ -173,4 +132,4 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_wi
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

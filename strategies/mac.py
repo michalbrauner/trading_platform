@@ -2,10 +2,7 @@ from __future__ import print_function
 
 import datetime
 import numpy as np
-import args_parser
-
-from strategies.configuration_tools import ConfigurationTools
-
+import argparser_tools.basic
 from events.signal_event import SignalEvent
 from strategy import Strategy
 
@@ -116,40 +113,19 @@ class MovingAverageCrossStrategy(Strategy):
                             self.events.put(signal)
                             self.bought[s] = 'OUT'
 
-
-class MovingAverageCrossStrategyConfigurationTools(ConfigurationTools):
-    def __init__(self, settings):
-        self.settings = settings
-
     @staticmethod
-    def get_long_opts():
-        return ['short_window=', 'long_window=']
-
-    def get_strategy_params(self):
+    def get_strategy_params(args_namespace):
         return dict(
-            short_window=self.settings['short_window'],
-            long_window=self.settings['long_window']
+            short_window=args_namespace.short_window,
+            long_window=args_namespace.long_window
         )
 
-    def use_argument_if_valid(self, option, argument_value):
-        if option == '--short_window':
-            self.settings['short_window'] = argument_value
-        elif option == '--long_window':
-            self.settings['long_window'] = argument_value
+    @staticmethod
+    def create_argument_parser():
+        # () -> argparse.ArgumentParser
 
-        return self.settings
+        parser = argparser_tools.basic.create_basic_argument_parser()
+        parser = argparser_tools.basic.with_sl_and_tp(parser)
+        parser = argparser_tools.basic.with_sma_short_and_long(parser)
 
-    def set_default_values(self):
-        if 'short_window' not in self.settings:
-            self.settings['short_window'] = None
-
-        if 'long_window' not in self.settings:
-            self.settings['long_window'] = None
-
-        return self.settings
-
-    def valid_arguments_and_convert_if_necessarily(self):
-        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'short_window')
-        args_parser.validate_settings_is_number_and_set_to_int(self.settings, 'long_window')
-
-        return self.settings
+        return parser

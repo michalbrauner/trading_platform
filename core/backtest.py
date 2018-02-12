@@ -38,7 +38,7 @@ class Backtest(object):
             execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
             strategy_params_dict, equity_filename
     ):
-        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, bool, {}, str) -> None
+        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, [], {}, str) -> None
 
         self.output_directory = output_directory
         self.symbol_list = symbol_list
