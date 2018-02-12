@@ -1,14 +1,9 @@
 from __future__ import print_function
 
 import datetime
-import numpy as np
-import os
-import args_parser
-
-from strategies.configuration_tools import ConfigurationTools
-
 from events.signal_event import SignalEvent
 from strategy import Strategy
+import argparser_tools.basic
 
 
 class DebugTradingStrategy(Strategy):
@@ -119,34 +114,15 @@ class DebugTradingStrategy(Strategy):
 
         return False
 
-
-class DebugTradingConfigurationTools(ConfigurationTools):
-    def __init__(self, settings):
-        self.settings = settings
+    @staticmethod
+    def get_strategy_params(args_namespace):
+        return dict(signal_file=args_namespace.signal_file)
 
     @staticmethod
-    def get_long_opts():
-        return ['signal_file=']
+    def create_argument_parser():
+        # () -> argparse.ArgumentParser
 
-    def get_strategy_params(self):
-        return dict(signal_file=self.settings['signal_file'])
+        parser = argparser_tools.basic.create_basic_argument_parser()
+        parser.add_argument('--signal_file', type=argparser_tools.basic.existing_file)
 
-    def use_argument_if_valid(self, option, argument_value):
-        if option == '--signal_file':
-            self.settings['signal_file'] = argument_value
-
-        return self.settings
-
-    def set_default_values(self):
-        if 'signal_file' not in self.settings:
-            self.settings['signal_file'] = None
-
-        return self.settings
-
-    def valid_arguments_and_convert_if_necessarily(self):
-        if self.settings['signal_file'] is not None \
-                and os.path.isfile(self.settings['signal_file']) is False:
-
-            raise Exception('signal_file does not exist')
-
-        return self.settings
+        return parser

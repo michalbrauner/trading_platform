@@ -51,3 +51,13 @@ class Strategy(object):
     @staticmethod
     def get_pip_value():
         return 0.00001
+
+
+    @staticmethod
+    def get_strategy_params(args_namespace):
+        raise NotImplementedError("Should implement get_strategy_params()")
+
+
+    @staticmethod
+    def create_argument_parser():
+        raise NotImplementedError("Should implement create_argument_parser()")
