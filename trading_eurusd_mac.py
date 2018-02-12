@@ -16,33 +16,21 @@ from datahandlers.oanda_data_handler import OandaDataHandler
 from timeframe.timeframe import TimeFrame
 
 
-def get_strategy_configuration_tools(settings):
-    return mac.MovingAverageCrossStrategyConfigurationTools(settings)
-
-
 def get_strategy():
     return mac.MovingAverageCrossStrategy
 
 
-def create_argument_parser():
-    # () -> argparse.ArgumentParser
-
-    parser = argparser_tools.basic.create_basic_argument_parser()
-    parser = argparser_tools.basic.with_sl_and_tp(parser)
-    parser = argparser_tools.basic.with_sma_short_and_long(parser)
-
-    return parser
-
-
 def main():
-    args_namespace = create_argument_parser().parse_args()
+    strategy = get_strategy()
+    args_namespace = strategy.create_argument_parser().parse_args()
+    strategy_params_special = strategy.get_strategy_params(args_namespace)
 
     heartbeat = 0
 
     events_log_file = '{}/events.log'.format(args_namespace.output_directory)
 
     strategy_params = dict(stop_loss_pips=args_namespace.stop_loss, take_profit_pips=args_namespace.take_profit)
-    strategy_params.update(get_strategy_configuration_tools(args_namespace).get_strategy_params())
+    strategy_params.update(strategy_params_special)
 
     configuration = Configuration(data_handler_name=OandaDataHandler,
                                   execution_handler_name=OandaExecutionHandler)

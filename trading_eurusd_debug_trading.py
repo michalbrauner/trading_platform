@@ -11,25 +11,15 @@ from loggers.text_logger import TextLogger
 import os
 from datahandlers.oanda_data_handler import OandaDataHandler
 from timeframe.timeframe import TimeFrame
-import argparser_tools.basic
 
 
 def get_strategy():
     return debug_trading.DebugTradingStrategy
 
 
-def create_argument_parser():
-    # () -> argparse.ArgumentParser
-
-    parser = argparser_tools.basic.create_basic_argument_parser()
-    parser.add_argument('--signal_file', type=argparser_tools.basic.existing_file)
-
-    return parser
-
-
 def main():
     strategy = get_strategy()
-    args_namespace = create_argument_parser().parse_args()
+    args_namespace = strategy.create_argument_parser().parse_args()
     strategy_params_special = strategy.get_strategy_params(args_namespace)
 
     events_log_file = '{}/events.log'.format(args_namespace.output_directory)
