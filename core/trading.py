@@ -22,7 +22,7 @@ class Trading(object):
 
     def __init__(self, output_directory, symbol_list, heartbeat, configuration,
                  data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger,
-                 enabled_logs, strategy_params_dict, equity_filename):
+                 enabled_log_types, strategy_params_dict, equity_filename):
         """
 
         :type output_directory: str
@@ -35,7 +35,7 @@ class Trading(object):
         :type strategy: Type[Strategy]
         :type position_size_handler: PositionSizeHandler
         :type logger: Logger
-        :type enabled_logs: bool
+        :type enabled_log_types: []
         :type strategy_params_dict: {}
         :type equity_filename: str
         """
@@ -50,7 +50,7 @@ class Trading(object):
         self.strategy_cls = strategy
         self.position_size_handler = position_size_handler
         self.logger = logger
-        self.enabled_log_types = enabled_logs
+        self.enabled_log_types = enabled_log_types
         self.strategy_params_dict = strategy_params_dict
         self.equity_filename = equity_filename
 

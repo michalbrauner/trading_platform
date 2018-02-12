@@ -17,6 +17,11 @@ class DataHandler(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
+    def get_symbol_list(self):
+        # type: () -> []
+        raise NotImplementedError("Should implement get_symbol_list()")
+
+    @abstractmethod
     def backtest_should_continue(self):
         raise NotImplementedError("Should implement backtest_should_continue()")
 

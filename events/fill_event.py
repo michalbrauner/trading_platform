@@ -1,4 +1,5 @@
 from events.event import Event
+from datetime import datetime
 
 
 class FillEvent(Event):
@@ -10,22 +11,18 @@ class FillEvent(Event):
     """
 
     def __init__(self, timeindex, symbol, exchange, quantity,
-                 direction, fill_cost, commission=None):
-        """
-        Initialises the FillEvent object. Sets the symbol, exchange,
-        quantity, direction, cost of fill and an optional
-        commission.
-
-        Parameters:
-        timeindex - The bar-resolution when the order was filled.
-        symbol - The instrument which was filled.
-        exchange - The exchange where the order was filled.
-        quantity - The filled quantity.
-        direction - The direction of fill ('BUY' or 'SELL')
-        fill_cost - The holdings value in dollars.
-        commission - An optional commission.
+                 direction, fill_cost, commission=None, trade_id=None):
         """
 
+        :type timeindex: datetime
+        :type symbol: str
+        :type exchange: str
+        :type quantity: float
+        :type direction: str
+        :type fill_cost: float|None
+        :type commission: float|None
+        :type trade_id: int|None
+        """
         self.type = 'FILL'
         self.timeindex = timeindex
         self.symbol = symbol
@@ -43,6 +40,14 @@ class FillEvent(Event):
         else:
             self.fill_cost = fill_cost
 
+        if trade_id is None:
+            self.trade_id = 0
+        else:
+            self.trade_id = trade_id
+
     def get_as_string(self):
-        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f' % \
-               (self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost)
+        return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, TradeId: %d' % \
+               (
+                   self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,
+                   self.trade_id
+               )

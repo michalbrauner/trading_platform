@@ -24,9 +24,9 @@ class KFold(OptimizationAndValidation):
             y_test = y.ix[y.index[test_index]]
 
             self.model.fit(x_train, y_train)
-            self.calculate_stats_and_show_result(x_test, y_test)
+            self.calculate_stats_and_write_result(x_test, y_test)
 
-    def print_title(self):
+    def get_title(self):
         pass
 
 

@@ -60,7 +60,6 @@ class Backtest(object):
         self.signals = 0
         self.orders = 0
         self.fills = 0
-        self.num_strats = 1
 
         self.stats = None
 
@@ -150,9 +149,9 @@ class Backtest(object):
         sys.stdout.flush()
 
     def _save_equity_and_generate_stats(self):
-        """
-        Outputs the strategy performance from the backtest.
-        """
+        print('Starting to generate equity')
+        sys.stdout.flush()
+
         self.portfolio.create_equity_curve_dataframe()
         self.stats = self.portfolio.output_summary_stats()
 

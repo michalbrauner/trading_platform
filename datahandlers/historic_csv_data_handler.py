@@ -40,6 +40,10 @@ class HistoricCSVDataHandler(DataHandler):
 
         self._open_convert_csv_files()
 
+    def get_symbol_list(self):
+        # type: () -> []
+        return self.symbol_list
+
     def backtest_should_continue(self):
         return self.continue_backtest
 

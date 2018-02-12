@@ -5,6 +5,7 @@ from core.portfolio import Portfolio
 from core.backtest import Backtest
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from executionhandlers.simulated_execution import SimulatedExecutionHandler
+from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 from strategies.mac import MovingAverageCrossStrategy
 from strategies.eurusd_daily_forecast import EurUsdDailyForecastStrategy
 from positionsizehandlers.fixed_position_size import FixedPositionSize
@@ -15,6 +16,7 @@ import itertools
 import string
 import numpy as np
 from datahandlers.data_handler_factory import DataHandlerFactory
+from core.configuration import Configuration
 
 
 def print_usage():
@@ -144,19 +146,19 @@ def run_backtest_instance(settings, events_log_file, heartbeat, sl, tp, short_wi
         sma_long_period=long_window
     )
 
+    configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
+                                  execution_handler_name=SimulatedExecutionHandler)
+    configuration.set_option(Configuration.OPTION_CSV_DIR, settings['data_directory'])
+
     backtest = Backtest(
         settings['output_directory'],
         settings['symbols'],
         settings['initial_capital_usd'],
         heartbeat,
         settings['start_date'],
-        {
-            'data_handler_name': HistoricCSVDataHandler,
-            'csv_dir': settings['data_directory'],
-            'execution_handler_name': SimulatedExecutionHandler,
-        },
+        configuration,
         DataHandlerFactory(),
-        SimulatedExecutionHandler,
+        ExecutionHandlerFactory(),
         Portfolio,
         EurUsdDailyForecastStrategy,
         FixedPositionSize(0.5),

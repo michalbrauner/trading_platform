@@ -24,11 +24,9 @@ class GridSearch(OptimizationAndValidation):
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.5, random_state=42)
 
         self.model.fit(x_train, y_train)
-        self.calculate_stats_and_show_result(x_test, y_test)
+        self.calculate_stats_and_write_result(x_test, y_test)
 
-    def calculate_stats_and_show_result(self, x_test, y_test):
-
-        self.print_title()
+    def calculate_stats_and_write_result(self, x_test, y_test):
 
         print('Optimised parameters found on training set:')
         print(self.model.best_estimator_, '\n')
@@ -37,7 +35,7 @@ class GridSearch(OptimizationAndValidation):
             prediction = self.model.predict(x_test)
             print('%0.3f for %r' % (mean_score, params))
 
-    def print_title(self):
+    def get_title(self):
         pass
 
 

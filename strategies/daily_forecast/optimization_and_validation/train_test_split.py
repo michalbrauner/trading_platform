@@ -4,8 +4,8 @@ from sklearn.cross_validation import train_test_split
 
 class TrainTestSplit(OptimizationAndValidation):
 
-    def __init__(self, model, model_output_file, test_size, random_state):
-        super(TrainTestSplit, self).__init__(model, model_output_file)
+    def __init__(self, model, model_output_file, models_summary_csv_writer, test_size, random_state):
+        super(TrainTestSplit, self).__init__(model, model_output_file, models_summary_csv_writer)
         self.test_size = test_size
         self.random_state = random_state
 
@@ -17,7 +17,7 @@ class TrainTestSplit(OptimizationAndValidation):
                                                             random_state=self.random_state)
 
         self.fit_and_save_model_if_file_defined(x_train, y_train)
-        self.calculate_stats_and_show_result(x_test, y_test)
+        self.calculate_stats_and_write_result(x_test, y_test)
 
 
 

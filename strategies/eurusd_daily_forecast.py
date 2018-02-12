@@ -3,6 +3,7 @@ from __future__ import print_function
 import datetime
 import args_parser
 import os.path
+import csv
 
 from strategies.configuration_tools import ConfigurationTools
 
@@ -20,16 +21,37 @@ from strategies.daily_forecast.optimization_and_validation.grid_search import Gr
 from events.signal_event import SignalEvent
 from strategy import Strategy
 from machine_learning.lagged_series import create_lagged_series
+from core.portfolio import Portfolio
+from datahandlers.data_handler import DataHandler
 
 import numpy as np
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class EurUsdDailyForecastStrategy(Strategy):
     def __init__(self, bars, portfolio, events, trained_model_file=None, train_data=None, model_output_file=None,
                  model_start_date=None, stop_loss_pips=None, take_profit_pips=None, sma_short_period=None,
                  sma_long_period=None):
+        """
+
+        :type bars: DataHandler
+        :type portfolio: Portfolio
+        :type events: queue.Queue
+        :type trained_model_file: str
+        :type train_data: str
+        :type model_output_file: str
+        :type model_start_date: datetime.datetime
+        :type stop_loss_pips: int
+        :type take_profit_pips: int
+        :type sma_short_period: int
+        :type sma_long_period: int
+        """
         self.bars = bars
-        self.symbol_list = self.bars.symbol_list
+        self.symbol_list = self.bars.get_symbol_list()
         self.events = events
         self.datetime_now = datetime.datetime.utcnow()
         self.portfolio = portfolio
@@ -45,7 +67,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         self.trained_model = trained_model_file
         self.train_data = train_data
-        self.model_output_file = model_output_file
+        self.model_output_directory = model_output_file
 
         if trained_model_file is None and train_data is None:
             raise Exception('Either trained_model_file or train_data need to be defined')
@@ -63,10 +85,6 @@ class EurUsdDailyForecastStrategy(Strategy):
             self.model = joblib.load(self.trained_model)
 
     def _calculate_initial_bought(self):
-        """
-        Adds keys to the bought dictionary for all symbols
-        and sets them to 'OUT'.
-        """
         bought = {}
         for s in self.symbol_list:
             bought[s] = 'OUT'
@@ -74,10 +92,6 @@ class EurUsdDailyForecastStrategy(Strategy):
         return bought
 
     def _calculate_initial_bar_indexes(self):
-        """
-        Adds keys to the bought dictionary for all symbols
-        and sets them to 'OUT'.
-        """
         bar_indexes = {}
         for s in self.symbol_list:
             bar_indexes[s] = 0
@@ -90,20 +104,65 @@ class EurUsdDailyForecastStrategy(Strategy):
         x = eurusd_ret[['Lag1', 'Lag2']]
         y = eurusd_ret['Direction']
 
-        model = self.get_model()
-        cross_validation = TrainTestSplit(model, self.model_output_file, 0.8, 42)
-        #cross_validation = KFold(model, self.model_output_file, 10)
+        models = self.get_models_to_analyze()
+        model_to_return = None
 
-        # tuned_parameters = [{
-        #     'kernel': ['rbf'],
-        #     'gamma': [1e-3, 1e-4],
-        #     'C': [1, 10, 100, 1000]
-        #  }]
-        #
-        # cross_validation = GridSearch(model, self.model_output_file, tuned_parameters, 10)
-        cross_validation.process(x, y)
+        models_output_summary_file = self.model_output_directory + os.path.sep + 'summary.csv'
+        models_output_summary_file_opened = open(models_output_summary_file, 'wb')
+        models_output_summary_file_csv_writer = csv.writer(models_output_summary_file_opened, delimiter=',')
 
-        return model
+        for model in models:
+
+            model_output_directory = self.model_output_directory + os.path.sep + model.__class__.__name__
+
+            if not os.path.exists(model_output_directory):
+                os.mkdir(model_output_directory)
+
+            model_output_filename = model_output_directory + os.path.sep + 'model.pkl'
+
+            cross_validation = TrainTestSplit(model, model_output_filename, models_output_summary_file_csv_writer, 0.8,
+                                              42)
+
+            # cross_validation = KFold(model, self.model_output_file, 10)
+
+            # tuned_parameters = [{
+            #     'kernel': ['rbf'],
+            #     'gamma': [1e-3, 1e-4],
+            #     'C': [1, 10, 100, 1000]
+            #  }]
+            #
+            # cross_validation = GridSearch(model, self.model_output_file, tuned_parameters, 10)
+            cross_validation.process(x, y)
+
+            if model_to_return is None:
+                model_to_return = model
+
+            models_output_summary_file_opened.flush()
+
+        models_output_summary_file_opened.close()
+
+        return model_to_return
+
+    @staticmethod
+    def get_models_to_analyze():
+        models = list()
+
+        models.append(RandomForestClassifier(n_estimators=1000, criterion='gini', max_depth=None, min_samples_split=2,
+                                             min_samples_leaf=1, max_features='auto', bootstrap=True, oob_score=False,
+                                             n_jobs=1, random_state=None, verbose=0))
+
+        models.append(SVC(C=1000000.0, cache_size=200, class_weight=None, coef0=0.0, degree=3,
+                    gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
+                    shrinking=True, tol=0.001, verbose=False))
+
+        models.append(SVC())
+
+        models.append(LogisticRegression())
+        models.append(QuadraticDiscriminantAnalysis())
+        models.append(LinearDiscriminantAnalysis())
+        models.append(LinearSVC())
+
+        return models
 
     def get_model(self):
         # model = RandomForestClassifier(n_estimators=1000, criterion='gini', max_depth=None, min_samples_split=2,
@@ -114,12 +173,12 @@ class EurUsdDailyForecastStrategy(Strategy):
         #             gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
         #             shrinking=True, tol=0.001, verbose=False)
 
-        #model = SVC()
+        # model = SVC()
 
         model = LogisticRegression()
-        #model = QuadraticDiscriminantAnalysis()
-        #model = LinearDiscriminantAnalysis()
-        #model = LinearSVC()
+        # model = QuadraticDiscriminantAnalysis()
+        # model = LinearDiscriminantAnalysis()
+        # model = LinearSVC()
 
         return model
 
@@ -134,7 +193,9 @@ class EurUsdDailyForecastStrategy(Strategy):
 
             self.bar_indexes[symbol] += 1
 
-            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max(self.sma_long_period, self.sma_short_period):
+            max_sma_period = max(self.sma_long_period, self.sma_short_period)
+
+            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max_sma_period:
 
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
@@ -150,49 +211,76 @@ class EurUsdDailyForecastStrategy(Strategy):
                 )
 
                 prediction = self.model.predict([prediction_series])
-                sma_short = self.calculate_sma(symbol, self.sma_short_period)
-                sma_long = self.calculate_sma(symbol, self.sma_long_period)
 
-                can_open_long = prediction > 0 and sma_short > sma_long
-                can_open_short = prediction < 0 and sma_short < sma_long
+                sma_enabled = self.sma_short_period > 0 and self.sma_long_period > 0
 
-                if can_open_long and self.bought[symbol] == 'OUT':
-                    direction = 'LONG'
+                if sma_enabled:
 
-                    self.bought[symbol] = direction
+                    bars = self.bars.get_latest_bars_values(symbol, 'close_bid', N=max_sma_period)
 
-                    stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
-                    take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
+                    sma_short = self.calculate_sma(self.sma_short_period, bars)
+                    sma_long = self.calculate_sma(self.sma_long_period, bars)
+                else:
+                    sma_short = 0
+                    sma_long = 0
 
-                    signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
-                    self.events.put(signal)
+                signal_generated = self.calculate_exit_signals(symbol, bar_date, prediction, datetime_now)
 
-                if can_open_short and self.bought[symbol] == 'OUT':
-                    direction = 'SHORT'
+                self.calculate_new_signals(symbol, bar_date, bar_price, prediction, sma_short, sma_long,
+                                           datetime_now)
 
-                    self.bought[symbol] = direction
+    def calculate_new_signals(self, symbol, bar_date, bar_price, prediction, sma_short, sma_long, datetime_now):
 
-                    stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
-                    take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
+        current_position = self.portfolio.get_current_position(symbol)
 
-                    signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
-                    self.events.put(signal)
+        sma_enabled = self.sma_short_period > 0 and self.sma_long_period > 0
 
-                if prediction > 0 and self.bought[symbol] == 'SHORT':
-                    self.bought[symbol] = 'OUT'
-                    signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0)
-                    self.events.put(signal)
+        if current_position is None:
+            if prediction > 0 and ((sma_enabled and sma_short > sma_long) or not sma_enabled):
+                direction = 'LONG'
 
-                if prediction < 0 and self.bought[symbol] == 'LONG':
-                    self.bought[symbol] = 'OUT'
-                    signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0)
-                    self.events.put(signal)
+                self.bought[symbol] = direction
 
-    def calculate_sma(self, symbol, period):
-        bars = self.bars.get_latest_bars_values(
-            symbol, 'close_bid', N=period
-        )
+                stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
+                take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
 
+                signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
+                self.events.put(signal)
+
+                return True
+
+            if prediction < 0 and ((sma_enabled and sma_short < sma_long) or not sma_enabled):
+                direction = 'SHORT'
+
+                self.bought[symbol] = direction
+
+                stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, direction)
+                take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
+
+                signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
+                self.events.put(signal)
+
+                return True
+
+        return False
+
+    def calculate_exit_signals(self, symbol, bar_date, prediction, datetime_now):
+
+        current_position = self.portfolio.get_current_position(symbol)
+
+        if current_position is not None and \
+                ((prediction > 0 and current_position.is_short()) or (prediction < 0 and current_position.is_long())):
+            signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0, None, None,
+                                 current_position.get_trade_id())
+            self.events.put(signal)
+
+            self.bought[symbol] = 'OUT'
+
+            return True
+
+        return False
+
+    def calculate_sma(self, period, bars):
         return np.mean(bars[-period:])
 
 
@@ -255,8 +343,7 @@ class EurUsdDailyForecastStrategyConfigurationTools(ConfigurationTools):
 
     def valid_arguments_and_convert_if_necessarily(self):
         if self.settings['trained_model_file'] is not None \
-        and os.path.isfile(self.settings['trained_model_file']) is False:
-
+                and os.path.isfile(self.settings['trained_model_file']) is False:
             raise Exception('trained_model_file does not exist')
 
         if self.settings['train_data'] is not None and os.path.isfile(self.settings['train_data']) is False:
