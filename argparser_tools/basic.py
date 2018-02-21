@@ -40,11 +40,18 @@ def create_basic_argument_parser():
     # () -> argparse.ArgumentParser
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--data_directory', type=existing_directory, required=True)
     parser.add_argument('-s', '--symbols', nargs='+', required=True)
+    parser.add_argument('-o', '--output_directory', type=existing_directory, required=True)
+
+    return parser
+
+
+def with_backtest_arguments(parser):
+    # (argparse.ArgumentParser) -> argparse.ArgumentParser
+
+    parser.add_argument('-d', '--data_directory', type=existing_directory, required=True)
     parser.add_argument('-c', '--initial_capital_usd', type=int, required=True)
     parser.add_argument('-b', '--start_date', type=datetime_argument, required=True)
-    parser.add_argument('-o', '--output_directory', type=existing_directory, required=True)
 
     return parser
 

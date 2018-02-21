@@ -119,10 +119,14 @@ class DebugTradingStrategy(Strategy):
         return dict(signal_file=args_namespace.signal_file)
 
     @staticmethod
-    def create_argument_parser():
+    def create_argument_parser(backtest_only):
         # () -> argparse.ArgumentParser
 
         parser = argparser_tools.basic.create_basic_argument_parser()
+
+        if (backtest_only):
+            parser = argparser_tools.basic.with_backtest_arguments(parser)
+
         parser.add_argument('--signal_file', type=argparser_tools.basic.existing_file)
 
         return parser

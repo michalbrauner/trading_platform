@@ -20,6 +20,7 @@ def get_argument_parser():
     # () -> argparse.ArgumentParser
 
     parser = argparser_tools.basic.create_basic_argument_parser()
+    parser = argparser_tools.basic.with_backtest_arguments(parser)
     parser = argparser_tools.optimization.with_sma_short_and_long(parser)
     parser = argparser_tools.optimization.with_sl_and_tp(parser)
 

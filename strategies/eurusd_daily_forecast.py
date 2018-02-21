@@ -292,10 +292,14 @@ class EurUsdDailyForecastStrategy(Strategy):
         )
 
     @staticmethod
-    def create_argument_parser():
+    def create_argument_parser(backtest_only):
         # () -> argparse.ArgumentParser
 
         parser = argparser_tools.basic.create_basic_argument_parser()
+
+        if (backtest_only):
+            parser = argparser_tools.basic.with_backtest_arguments(parser)
+
         parser = argparser_tools.basic.with_sl_and_tp(parser)
         parser = argparser_tools.basic.with_sma_short_and_long(parser)
 

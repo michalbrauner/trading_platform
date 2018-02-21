@@ -59,5 +59,5 @@ class Strategy(object):
 
 
     @staticmethod
-    def create_argument_parser():
+    def create_argument_parser(backtest_only):
         raise NotImplementedError("Should implement create_argument_parser()")

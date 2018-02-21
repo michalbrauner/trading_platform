@@ -19,12 +19,12 @@ def get_strategy():
 
 def main():
     strategy = get_strategy()
-    args_namespace = strategy.create_argument_parser().parse_args()
+    args_namespace = strategy.create_argument_parser(False).parse_args()
     strategy_params_special = strategy.get_strategy_params(args_namespace)
 
     events_log_file = '{}/events.log'.format(args_namespace.output_directory)
 
-    strategy_params = dict(stop_loss_pips=args_namespace.stop_loss, take_profit_pips=args_namespace.take_profit)
+    strategy_params = dict(stop_loss_pips=None, take_profit_pips=None)
     strategy_params.update(strategy_params_special)
 
     configuration = Configuration(data_handler_name=OandaDataHandler,
