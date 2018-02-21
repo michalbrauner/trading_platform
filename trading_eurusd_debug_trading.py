@@ -32,7 +32,7 @@ def main():
 
     configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
     configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
-    configuration.set_option(Configuration.OPTION_TIMEFRAME, TimeFrame.TIMEFRAME_S5)
+    configuration.set_option(Configuration.OPTION_TIMEFRAME, TimeFrame.TIMEFRAME_M15)
 
     trading = Trading(args_namespace.output_directory, args_namespace.symbols, 0,
                       configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
