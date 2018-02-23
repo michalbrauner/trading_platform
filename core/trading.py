@@ -7,6 +7,7 @@ from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 from oanda.symbol_name_converter import SymbolNameConverter
+import string
 
 try:
     import Queue as queue
@@ -84,12 +85,12 @@ class Trading(object):
         if self.logger is not None:
             self.logger.open()
 
-        self.write_progress()
+        self.write_progress(0)
 
         i = 0
         while True:
             i += 1
-            self.write_progress()
+            self.write_progress(i)
 
             # Update the market bars
             if self.data_handler.backtest_should_continue():
@@ -144,8 +145,15 @@ class Trading(object):
 
             self.log_message(iteration, log)
 
-    def write_progress(self):
-        print('Trading...', end='\r')
+    def write_progress(self, iteration):
+        number_of_bars_for_symbols = []
+        for symbol in self.symbol_list:
+            number_of_bars_for_symbols.append('{}: {}'.format(symbol, self.data_handler.get_number_of_bars(symbol)))
+
+        number_of_dots = iteration % 10
+        dots = ['.'] * number_of_dots
+
+        print('Trading{} ({})'.format(string.join(dots, ''), string.join(number_of_bars_for_symbols,', ')), end='\r')
         sys.stdout.flush()
 
     def _save_equity_and_generate_stats(self):
