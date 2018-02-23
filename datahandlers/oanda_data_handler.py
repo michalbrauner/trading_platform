@@ -200,4 +200,7 @@ class OandaDataHandler(DataHandler):
 
         :type symbol: str
         """
-        return len(self.symbol_data[symbol])
+        if symbol in self.symbol_data:
+            return len(self.symbol_data[symbol])
+        else:
+            return 0
