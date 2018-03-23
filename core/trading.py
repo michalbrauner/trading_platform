@@ -85,6 +85,12 @@ class Trading(object):
         if self.logger is not None:
             self.logger.open()
 
+        print('Trading started at {}'.format(datetime.datetime.now()))
+        print('Timeframe: {}'.format(self.configuration.get_option(Configuration.OPTION_TIMEFRAME)))
+        print('')
+        
+        sys.stdout.flush()
+
         self.write_progress(0)
 
         i = 0
@@ -148,12 +154,21 @@ class Trading(object):
     def write_progress(self, iteration):
         number_of_bars_for_symbols = []
         for symbol in self.symbol_list:
-            number_of_bars_for_symbols.append('{}: {}'.format(symbol, self.data_handler.get_number_of_bars(symbol)))
+            number_of_bars = self.data_handler.get_number_of_bars(symbol)
+            last_bar = self.data_handler.get_latest_bar(symbol) if number_of_bars > 0 else None
+
+            number_of_bars_for_symbols.append(
+                '{}: {} bars, last datetime open: {}'.format(symbol, number_of_bars,
+                                                             last_bar['datetime'] if last_bar is not None else ''))
 
         number_of_dots = iteration % 10
         dots = ['.'] * number_of_dots
 
-        print('Trading{} ({})'.format(string.join(dots, ''), string.join(number_of_bars_for_symbols,', ')), end='\r')
+        spaces = [' '] * 20
+
+        print('Trading{} ({}){}'.format(string.join(dots, ''), string.join(number_of_bars_for_symbols, ', '),
+                                        string.join(spaces, '')), end='\r')
+
         sys.stdout.flush()
 
     def _save_equity_and_generate_stats(self):

@@ -11,6 +11,7 @@ class Stream:
         self.domain = 'stream-fxpractice.oanda.com'
 
         self.response = None
+        self.response_iter_lines = None
 
     def connect_to_stream(self):
         s = requests.Session()
@@ -21,7 +22,7 @@ class Stream:
         try:
             req = requests.Request('GET', url, headers=headers, params=params)
             pre = req.prepare()
-            self.response = s.send(pre, stream=True, verify=True)
+            self.response = s.send(pre, stream=True, verify=True, timeout=(10, 60))
 
         except Exception as e:
             s.close()
@@ -36,7 +37,10 @@ class Stream:
             print(self.response.text)
             return
 
-        for line in self.response.iter_lines(1):
+        if self.response_iter_lines is None:
+            self.response_iter_lines = self.response.iter_lines(1)
+
+        for line in self.response_iter_lines:
             if line:
                 try:
                     line = line.decode('utf-8')
