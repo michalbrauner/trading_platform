@@ -182,7 +182,7 @@ class EurUsdDailyForecastStrategy(Strategy):
         symbol = self.symbol_list[0]
         datetime_now = self.datetime_now
 
-        if event.type == 'MARKET' and symbol == 'eurusd':
+        if event.type == 'MARKET' and symbol == 'EUR_USD':
 
             if self.portfolio.current_positions[symbol] == 0:
                 self.bought[symbol] = 'OUT'
