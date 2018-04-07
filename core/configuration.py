@@ -8,6 +8,7 @@ class Configuration(object):
     OPTION_ACCOUNT_ID = 'account_id'
     OPTION_ACCESS_TOKEN = 'access_token'
     OPTION_TIMEFRAME = 'timeframe'
+    OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY = 'number_of_bars_preload_from_history'
 
     def __init__(self, data_handler_name, execution_handler_name):
         """

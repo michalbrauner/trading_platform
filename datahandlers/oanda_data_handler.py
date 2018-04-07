@@ -6,6 +6,7 @@ from events.market_event import MarketEvent
 from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from dateutil import parser
+from oanda.instrument_api_client import InstrumentApiClient
 
 try:
     import Queue as queue
@@ -17,8 +18,9 @@ from datahandlers.data_handler import DataHandler
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events,  symbol_list, stream, timeframe):
-        # type: (queue.Queue, [], OandaPriceStream) -> None
+    def __init__(self, events, symbol_list, stream, instrument_api_client, timeframe,
+                 number_of_bars_preload_from_history):
+        # type: (queue.Queue, [], OandaPriceStream, InstrumentApiClient, str, int) -> None
 
         self.events = events
         self.symbol_list = symbol_list
@@ -28,6 +30,13 @@ class OandaDataHandler(DataHandler):
         self.latest_symbol_data = {}
         self.continue_backtest = True
         self.timeframe = timeframe
+        self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
+
+        self.instrument_api_client = instrument_api_client
+
+        if number_of_bars_preload_from_history > 0:
+            for symbol in self.symbol_list:
+                self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
         self.stream = stream
         self.stream.connect_to_stream()
@@ -38,6 +47,20 @@ class OandaDataHandler(DataHandler):
 
     def backtest_should_continue(self):
         return self.continue_backtest
+
+    def preload_bars_from_history(self, symbol, number_of_bars):
+        candles_data = self.instrument_api_client.get_candles(symbol, self.timeframe, number_of_bars)
+
+        for price_data in candles_data['candles']:
+            price_ask_data = price_data['ask']
+            price_bid_data = price_data['bid']
+
+            bar_data = self.create_bar_data(self.get_price_datetime(price_data['time']), price_ask_data['c'],
+                                            price_ask_data['h'], price_ask_data['l'], price_ask_data['o'],
+                                            price_bid_data['c'], price_bid_data['h'], price_bid_data['l'],
+                                            price_bid_data['o'])
+
+            self.append_new_price_data(symbol, bar_data)
 
     def _get_new_bar(self, symbol):
         """
@@ -55,9 +78,7 @@ class OandaDataHandler(DataHandler):
             if price['instrument'] == symbol:
                 newPriceData = pd.DataFrame(price, index=[price['datetime']])
 
-                price_datetime = parser.parse(price['datetime'])
-                price_datetime = price_datetime.replace(tzinfo=None)
-                price_datetime = price_datetime.replace(microsecond=0)
+                price_datetime = self.get_price_datetime(price['datetime'])
 
                 bar_borders = timeframe.get_timeframe_border(price_datetime)
 
@@ -78,37 +99,56 @@ class OandaDataHandler(DataHandler):
                     price_ask_high = float(openedBar['ask'].max())
                     price_ask_low = float(openedBar['ask'].min())
 
-                    data = {
-                        'datetime': opened_bar_starts_at,
-                        'open_bid': price_bid_open,
-                        'open_ask': price_ask_open,
-                        'high_bid': price_bid_high,
-                        'high_ask': price_ask_high,
-                        'low_bid': price_bid_low,
-                        'low_ask': price_ask_low,
-                        'close_bid': price_bid_close,
-                        'close_ask': price_ask_close,
-                        'volume': 0
-                    }
+                    data = self.create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low,
+                                                price_ask_open, price_bid_close, price_bid_high, price_bid_low,
+                                                price_bid_open)
 
-                    if symbol not in self.symbol_data:
-                        self.symbol_data[symbol] = [data]
-                        self.symbol_position_info[symbol] = dict(
-                            number_of_items=1,
-                            position=1
-                        )
+                    yield data
 
-                        yield data
-                    else:
-                        self.symbol_data[symbol].append(data)
+    @staticmethod
+    def get_price_datetime(datetime_as_string):
+        price_datetime = parser.parse(datetime_as_string)
+        price_datetime = price_datetime.replace(tzinfo=None)
+        price_datetime = price_datetime.replace(microsecond=0)
 
-                        self.symbol_position_info[symbol]['number_of_items'] = \
-                            self.symbol_position_info[symbol]['number_of_items'] + 1
+        return price_datetime
 
-                        self.symbol_position_info[symbol]['position'] = \
-                            self.symbol_position_info[symbol]['position'] + 1
+    @staticmethod
+    def create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low, price_ask_open,
+                        price_bid_close, price_bid_high, price_bid_low, price_bid_open):
+        return {
+            'datetime': opened_bar_starts_at,
+            'open_bid': price_bid_open,
+            'open_ask': price_ask_open,
+            'high_bid': price_bid_high,
+            'high_ask': price_ask_high,
+            'low_bid': price_bid_low,
+            'low_ask': price_ask_low,
+            'close_bid': price_bid_close,
+            'close_ask': price_ask_close,
+            'volume': 0
+        }
 
-                        yield data
+    def append_new_price_data(self, symbol, data):
+        if symbol not in self.symbol_data:
+            self.symbol_data[symbol] = [data]
+            self.symbol_position_info[symbol] = dict(
+                number_of_items=1,
+                position=1
+            )
+        else:
+            self.symbol_data[symbol].append(data)
+
+            self.symbol_position_info[symbol]['number_of_items'] = \
+                self.symbol_position_info[symbol]['number_of_items'] + 1
+
+            self.symbol_position_info[symbol]['position'] = \
+                self.symbol_position_info[symbol]['position'] + 1
+
+        if symbol not in self.latest_symbol_data:
+            self.latest_symbol_data[symbol] = []
+
+        self.latest_symbol_data[symbol].append(data)
 
     def get_latest_bar(self, symbol):
         """
@@ -185,10 +225,7 @@ class OandaDataHandler(DataHandler):
                 self.continue_backtest = False
             else:
                 if bar is not None:
-                    if s not in self.latest_symbol_data:
-                        self.latest_symbol_data[s] = []
-
-                    self.latest_symbol_data[s].append(bar)
+                    self.append_new_price_data(s, bar)
 
         self.events.put(MarketEvent())
 
