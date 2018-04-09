@@ -2,7 +2,8 @@ import re
 import argparse
 import os
 import datetime
-
+import string
+from timeframe.timeframe import TimeFrame
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
@@ -36,12 +37,15 @@ def existing_file(value):
     return value
 
 
-def create_basic_argument_parser():
-    # () -> argparse.ArgumentParser
+def create_basic_argument_parser(backtest_only):
+    # (bool) -> argparse.ArgumentParser
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--symbols', nargs='+', required=True)
     parser.add_argument('-o', '--output_directory', type=existing_directory, required=True)
+
+    if backtest_only is False:
+        parser.add_argument('-t', '--time_frame', required=True, choices=TimeFrame.get_allowed_time_frames())
 
     return parser
 

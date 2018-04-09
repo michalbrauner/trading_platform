@@ -32,7 +32,7 @@ def main():
                                   execution_handler_name=OandaExecutionHandler)
     configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
     configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
-    configuration.set_option(Configuration.OPTION_TIMEFRAME, TimeFrame.TIMEFRAME_M15)
+    configuration.set_option(Configuration.OPTION_TIMEFRAME, args_namespace.time_frame)
     configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY,
                              max(strategy_params['sma_short_period'], strategy_params['sma_long_period']))
 

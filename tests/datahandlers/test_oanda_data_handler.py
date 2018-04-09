@@ -20,7 +20,7 @@ class TestOandaDataHandler(unittest.TestCase):
 
         stream.get_price.side_effect = self._get_prices_to_return()
 
-        data_handler = OandaDataHandler(events, [self.symbol_eur_usd], stream, TimeFrame.TIMEFRAME_S5)
+        data_handler = OandaDataHandler(events, [self.symbol_eur_usd], stream, TimeFrame.TIME_FRAME_S5)
         data_handler.update_bars()
 
         self.assertEqual(
