@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 from events.market_event import MarketEvent
@@ -18,7 +16,7 @@ from datahandlers.data_handler import DataHandler
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events, symbol_list, stream, instrument_api_client, timeframe,
+    def __init__(self, events, symbol_list, stream, instrument_api_client, time_frame,
                  number_of_bars_preload_from_history):
         # type: (queue.Queue, [], OandaPriceStream, InstrumentApiClient, str, int) -> None
 
@@ -29,7 +27,7 @@ class OandaDataHandler(DataHandler):
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
-        self.timeframe = timeframe
+        self.time_frame = time_frame
         self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
 
         self.instrument_api_client = instrument_api_client
@@ -49,7 +47,7 @@ class OandaDataHandler(DataHandler):
         return self.continue_backtest
 
     def preload_bars_from_history(self, symbol, number_of_bars):
-        candles_data = self.instrument_api_client.get_candles(symbol, self.timeframe, number_of_bars)
+        candles_data = self.instrument_api_client.get_candles(symbol, self.time_frame, number_of_bars)
 
         for price_data in candles_data['candles']:
             price_ask_data = price_data['ask']
@@ -72,7 +70,7 @@ class OandaDataHandler(DataHandler):
         opened_bar_finishes_at = None
         opened_bar_starts_at = None
 
-        timeframe = TimeFrame(self.timeframe)
+        timeframe = TimeFrame(self.time_frame)
 
         for price in self.stream.get_price():
             if price['instrument'] == symbol:
@@ -80,7 +78,7 @@ class OandaDataHandler(DataHandler):
 
                 price_datetime = self.get_price_datetime(price['datetime'])
 
-                bar_borders = timeframe.get_timeframe_border(price_datetime)
+                bar_borders = timeframe.get_time_frame_border(price_datetime)
 
                 if opened_bar_finishes_at is None:
                     opened_bar_finishes_at = bar_borders[1]
@@ -118,14 +116,14 @@ class OandaDataHandler(DataHandler):
                         price_bid_close, price_bid_high, price_bid_low, price_bid_open):
         return {
             'datetime': opened_bar_starts_at,
-            'open_bid': price_bid_open,
-            'open_ask': price_ask_open,
-            'high_bid': price_bid_high,
-            'high_ask': price_ask_high,
-            'low_bid': price_bid_low,
-            'low_ask': price_ask_low,
-            'close_bid': price_bid_close,
-            'close_ask': price_ask_close,
+            'open_bid': float(price_bid_open),
+            'open_ask': float(price_ask_open),
+            'high_bid': float(price_bid_high),
+            'high_ask': float(price_ask_high),
+            'low_bid': float(price_bid_low),
+            'low_ask': float(price_ask_low),
+            'close_bid': float(price_bid_close),
+            'close_ask': float(price_ask_close),
             'volume': 0
         }
 

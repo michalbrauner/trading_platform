@@ -59,7 +59,6 @@ class EurUsdDailyForecastStrategy(Strategy):
         self.sma_long_period = sma_long_period
 
         self.bought = self._calculate_initial_bought()
-        self.bar_indexes = self._calculate_initial_bar_indexes()
 
         self.trained_model = trained_model_file
         self.train_data = train_data
@@ -86,13 +85,6 @@ class EurUsdDailyForecastStrategy(Strategy):
             bought[s] = 'OUT'
 
         return bought
-
-    def _calculate_initial_bar_indexes(self):
-        bar_indexes = {}
-        for s in self.symbol_list:
-            bar_indexes[s] = 0
-
-        return bar_indexes
 
     def create_symbol_forecast_model(self, file, model_start_date):
         eurusd_ret = create_lagged_series(file, model_start_date, lags=5)
@@ -187,11 +179,11 @@ class EurUsdDailyForecastStrategy(Strategy):
             if self.portfolio.current_positions[symbol] == 0:
                 self.bought[symbol] = 'OUT'
 
-            self.bar_indexes[symbol] += 1
+            number_of_bars = self.bars.get_number_of_bars(symbol)
 
             max_sma_period = max(self.sma_long_period, self.sma_short_period)
 
-            if self.bar_indexes[symbol] > 5 and self.bar_indexes[symbol] > max_sma_period:
+            if number_of_bars > 5 and number_of_bars > max_sma_period:
 
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
@@ -293,11 +285,11 @@ class EurUsdDailyForecastStrategy(Strategy):
 
     @staticmethod
     def create_argument_parser(backtest_only):
-        # () -> argparse.ArgumentParser
+        # (bool) -> argparse.ArgumentParser
 
-        parser = argparser_tools.basic.create_basic_argument_parser()
+        parser = argparser_tools.basic.create_basic_argument_parser(backtest_only)
 
-        if (backtest_only):
+        if backtest_only:
             parser = argparser_tools.basic.with_backtest_arguments(parser)
 
         parser = argparser_tools.basic.with_sl_and_tp(parser)

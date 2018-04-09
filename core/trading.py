@@ -79,7 +79,7 @@ class Trading(object):
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
                                                                                      self.data_handler,
-                                                                                     self.events)
+                                                                                     self.events, self.logger)
 
     def _run(self):
         if self.logger is not None:

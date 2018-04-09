@@ -36,10 +36,10 @@ class OrderApiClient:
         }
 
         if stop_loss is not None:
-            data_order['stopLossOnFill'] = {'price': stop_loss}
+            data_order['stopLossOnFill'] = {'price': round(stop_loss, 5)}
 
         if take_profit is not None:
-            data_order['takeProfitOnFill '] = {'price': stop_loss}
+            data_order['takeProfitOnFill '] = {'price': round(take_profit, 5)}
 
         data = {'order': data_order}
 

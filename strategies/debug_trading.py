@@ -122,7 +122,7 @@ class DebugTradingStrategy(Strategy):
     def create_argument_parser(backtest_only):
         # () -> argparse.ArgumentParser
 
-        parser = argparser_tools.basic.create_basic_argument_parser()
+        parser = argparser_tools.basic.create_basic_argument_parser(backtest_only)
 
         if (backtest_only):
             parser = argparser_tools.basic.with_backtest_arguments(parser)

@@ -13,7 +13,7 @@ class TestTimeFrame(unittest.TestCase):
                 datetime(year=2017, month=1, day=1, hour=10, minute=10, second=34),
             ),
             datetime(year=2017, month=1, day=1, hour=10, minute=10, second=33),
-            TimeFrame.TIMEFRAME_S5,
+            TimeFrame.TIME_FRAME_S5,
         ),
         (
             (
@@ -21,7 +21,7 @@ class TestTimeFrame(unittest.TestCase):
                 datetime(year=2017, month=1, day=1, hour=10, minute=10, second=34),
             ),
             datetime(year=2017, month=1, day=1, hour=10, minute=10, second=30),
-            TimeFrame.TIMEFRAME_S5,
+            TimeFrame.TIME_FRAME_S5,
         ),
         (
             (
@@ -29,7 +29,7 @@ class TestTimeFrame(unittest.TestCase):
                 datetime(year=2017, month=1, day=1, hour=10, minute=10, second=34),
             ),
             datetime(year=2017, month=1, day=1, hour=10, minute=10, second=34),
-            TimeFrame.TIMEFRAME_S5,
+            TimeFrame.TIME_FRAME_S5,
         ),
         (
             (
@@ -37,7 +37,7 @@ class TestTimeFrame(unittest.TestCase):
                 datetime(year=2017, month=1, day=1, hour=10, minute=14, second=59),
             ),
             datetime(year=2017, month=1, day=1, hour=10, minute=10, second=34),
-            TimeFrame.TIMEFRAME_M15,
+            TimeFrame.TIME_FRAME_M15,
         ),
         (
             (
@@ -45,7 +45,7 @@ class TestTimeFrame(unittest.TestCase):
                 datetime(year=2017, month=1, day=1, hour=10, minute=14, second=59),
             ),
             datetime(year=2017, month=1, day=1, hour=10, minute=00, second=34),
-            TimeFrame.TIMEFRAME_M15,
+            TimeFrame.TIME_FRAME_M15,
         ),
     )
 
@@ -53,7 +53,7 @@ class TestTimeFrame(unittest.TestCase):
     def test_get_timeframe_border(self, expected_border, test_datetime, timeframe):
         timeframe_object = TimeFrame(timeframe)
 
-        bar_border = timeframe_object.get_timeframe_border(test_datetime)
+        bar_border = timeframe_object.get_time_frame_border(test_datetime)
 
         self.assertEqual(expected_border, bar_border)
 
