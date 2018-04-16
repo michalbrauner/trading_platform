@@ -58,9 +58,19 @@ class OandaExecutionHandler(ExecutionHandler):
                         trade_id
                     )
 
+                    if event.stop_loss is not None:
+                        stop_loss = event.stop_loss
+                    else:
+                        stop_loss = 0.0
+
+                    if event.take_profit is not None:
+                        take_profit = event.take_profit
+                    else:
+                        take_profit = 0.0
+
                     self.logger.write(
                         'Executed the order with stopLoss=%10.5f, takeProfit=%10.5f' % (
-                        event.stop_loss, event.take_profit))
+                            stop_loss, take_profit))
 
                     self.events.put(fill_event)
 
