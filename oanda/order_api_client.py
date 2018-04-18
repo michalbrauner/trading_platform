@@ -17,13 +17,6 @@ class OrderApiClient:
         :type stop_loss: float
         :type take_profit: float
         """
-        s = requests.Session()
-        url = 'https://{}/v3/accounts/{}/orders'.format(self.domain, self.account_id)
-        headers = {
-            'Authorization': 'Bearer {}'.format(self.access_token),
-            'Content-Type': 'application/json'
-        }
-
         if (direction == 'SELL' and units > 0) or (direction == 'BUY' and units < 0):
             units = units * -1
 
@@ -36,23 +29,32 @@ class OrderApiClient:
         }
 
         if stop_loss is not None:
-            data_order['stopLossOnFill'] = {'price': round(stop_loss, 5)}
+            data_order['stopLossOnFill'] = {'price': ('%.5f' % stop_loss)}
 
-        if take_profit is not None:
-            data_order['takeProfitOnFill '] = {'price': round(take_profit, 5)}
+        response = self.send_request(self.get_orders_endpoint(), {'order': data_order})
 
-        data = {'order': data_order}
+        if take_profit is not None and 'orderFillTransaction' in response:
+            trade_id = response['orderFillTransaction']['tradeOpened']['tradeID']
+            take_profit_response = self.create_take_profit_order(trade_id, take_profit)
 
-        try:
-            req = requests.Request('POST', url, headers=headers, data=json.dumps(data))
-            pre = req.prepare()
-            response = s.send(pre, stream=True, verify=True)
+        return response
 
-            return json.loads(response.content)
+    def create_take_profit_order(self, trade_id, price):
+        """
+        :type trade_id: str
+        :type price: float
+        """
+        data = {
+            'order': {
+                'type': 'TAKE_PROFIT',
+                'tradeID': trade_id,
+                'price': '%.5f' % price,
+                'timeInForce': 'GTC',
+                'triggerCondition': 'DEFAULT'
+            }
+        }
 
-        except Exception as e:
-            s.close()
-            raise Exception('Caught exception when connecting to API\n' + str(e))
+        return self.send_request(self.get_orders_endpoint(), data)
 
     def create_new_exit_order(self, units, instrument, trade_id, trade_to_exit_direction):
         """
@@ -61,27 +63,34 @@ class OrderApiClient:
         :type instrument: str
         :type trade_id: int
         """
+        if (trade_to_exit_direction == 'SELL' and units < 0) or (trade_to_exit_direction == 'BUY' and units > 0):
+            units = units * -1
+
+        data = {
+            'order': {
+                'units': units,
+                'instrument': instrument,
+                'type': 'MARKET',
+                'tradeClose ': {
+                    'tradeID': trade_id,
+                    'units': 'ALL'
+                },
+            }
+        }
+
+        return self.send_request(self.get_orders_endpoint(), data)
+
+    def send_request(self, url, data):
+        """
+        :type url: str
+        :type data: dict
+        """
+
         s = requests.Session()
-        url = 'https://{}/v3/accounts/{}/orders'.format(self.domain, self.account_id)
         headers = {
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Content-Type': 'application/json'
         }
-
-        if (trade_to_exit_direction == 'SELL' and units < 0) or (trade_to_exit_direction == 'BUY' and units > 0):
-            units = units * -1
-
-        data_order = {
-            'units': units,
-            'instrument': instrument,
-            'type': 'MARKET',
-            'tradeClose ': {
-                'tradeID': trade_id,
-                'units': 'ALL'
-            },
-        }
-
-        data = {'order': data_order}
 
         try:
             req = requests.Request('POST', url, headers=headers, data=json.dumps(data))
@@ -93,3 +102,6 @@ class OrderApiClient:
         except Exception as e:
             s.close()
             raise Exception('Caught exception when connecting to API\n' + str(e))
+
+    def get_orders_endpoint(self):
+        return 'https://{}/v3/accounts/{}/orders'.format(self.domain, self.account_id)

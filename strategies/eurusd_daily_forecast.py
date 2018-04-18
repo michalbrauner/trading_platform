@@ -224,7 +224,7 @@ class EurUsdDailyForecastStrategy(Strategy):
         sma_enabled = self.sma_short_period > 0 and self.sma_long_period > 0
 
         if current_position is None:
-            if prediction > 0 and ((sma_enabled and sma_short > sma_long) or not sma_enabled):
+            if True or (prediction > 0 and ((sma_enabled and sma_short > sma_long) or not sma_enabled)):
                 direction = 'LONG'
 
                 self.bought[symbol] = direction
