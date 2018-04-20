@@ -34,8 +34,9 @@ class OrderApiClient:
         response = self.send_request(self.get_orders_endpoint(), {'order': data_order})
 
         if take_profit is not None and 'orderFillTransaction' in response:
-            trade_id = response['orderFillTransaction']['tradeOpened']['tradeID']
-            take_profit_response = self.create_take_profit_order(trade_id, take_profit)
+            if 'tradeOpened' in response['orderFillTransaction']:
+                trade_id = response['orderFillTransaction']['tradeOpened']['tradeID']
+                take_profit_response = self.create_take_profit_order(trade_id, take_profit)
 
         return response
 
