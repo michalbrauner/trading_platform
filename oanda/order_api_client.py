@@ -63,6 +63,7 @@ class OrderApiClient:
         :type units: int
         :type instrument: str
         :type trade_id: int
+        :type trade_to_exit_direction: string
         """
         if (trade_to_exit_direction == 'SELL' and units < 0) or (trade_to_exit_direction == 'BUY' and units > 0):
             units = units * -1

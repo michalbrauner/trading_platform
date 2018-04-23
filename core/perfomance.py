@@ -38,6 +38,8 @@ def create_drawdowns(pnl):
     drawdown = pd.Series(index=idx)
     duration = pd.Series(index=idx)
 
+    pnl.fillna(0, inplace=True)
+
     # Loop over the index range
     for t in range(1, len(idx)):
         hwm.append(max(hwm[t - 1], pnl[t]))
