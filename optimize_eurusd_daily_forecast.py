@@ -38,7 +38,7 @@ def main():
     csv_file = open('{}/optimization.csv'.format(args_namespace.output_directory), 'wb')
     csv_file_writer = csv.writer(csv_file, delimiter=',')
     csv_file_writer.writerow(['SL', 'TP', 'SMA_short', 'SMA_long', 'Total Return',
-                              'Sharpe Ratio', 'Max Drawdown', 'Drawdown Duration'])
+                              'Sharpe Ratio', 'Max Drawdown', 'Drawdown Duration', 'Number of trades'])
 
     values_to_try = [
         range(args_namespace.sl_min, args_namespace.sl_max + 1, args_namespace.sl_step),
@@ -87,7 +87,8 @@ def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, args
             stats.get_total_return(),
             stats.get_sharpe_ratio(),
             stats.get_max_drawdown(),
-            stats.get_drawdown_duration()
+            stats.get_drawdown_duration(),
+            stats.get_number_of_trades()
         ]
     )
     csv_file.flush()

@@ -18,9 +18,12 @@ class Stats(object):
     def get_drawdown_duration(self):
         return self.drawdown_duration
 
+    def get_number_of_trades(self):
+        return len(self.trades)
+
     def print_stats(self):
         print('Total Return: %0.2f%%' % self.get_total_return())
         print('Sharpe Ratio: %0.2f' % self.get_sharpe_ratio())
         print('Max Drawdown: %0.2f%%' % self.get_max_drawdown())
         print('Drawdown Duration: %d' % self.get_drawdown_duration())
-        print('Number of trades: %d' % len(self.trades))
+        print('Number of trades: %d' % self.get_number_of_trades())
