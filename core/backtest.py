@@ -22,6 +22,7 @@ except ImportError:
 
 import time
 import datetime
+from oanda.symbol_name_converter import SymbolNameConverter
 
 
 class Backtest(object):
@@ -36,9 +37,9 @@ class Backtest(object):
             self, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, configuration, data_handler_factory,
             execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
-            strategy_params_dict, equity_filename
+            strategy_params_dict, equity_filename, trades_filename
     ):
-        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, [], {}, str) -> None
+        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, [], {}, str, str) -> None
 
         self.output_directory = output_directory
         self.symbol_list = symbol_list
@@ -55,6 +56,7 @@ class Backtest(object):
         self.enabled_log_types = enabled_logs
         self.strategy_params_dict = strategy_params_dict
         self.equity_filename = equity_filename
+        self.trades_filename = trades_filename
 
         self.events = queue.Queue()
         self.signals = 0
@@ -71,7 +73,8 @@ class Backtest(object):
                                                                            self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory, self.equity_filename, self.position_size_handler)
+                                            self.output_directory, self.equity_filename, self.trades_filename,
+                                            self.position_size_handler)
 
         self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 

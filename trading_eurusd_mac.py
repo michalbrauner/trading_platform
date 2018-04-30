@@ -42,7 +42,8 @@ def main():
     trading = Trading(args_namespace.output_directory, args_namespace.symbols, heartbeat,
                       configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, get_strategy(),
                       FixedPositionSize(0.01),
-                      TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv')
+                      TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params, 'equity.csv',
+                      'trades.csv')
 
     trading.run()
     trading.print_performance()

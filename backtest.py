@@ -45,7 +45,8 @@ def main():
         TextLogger(events_log_file),
         [Backtest.LOG_TYPE_EVENTS],
         strategy_params,
-        'equity.csv'
+        'equity.csv',
+        'trades.csv',
     )
 
     backtest.simulate_trading()

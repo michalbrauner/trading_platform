@@ -41,7 +41,7 @@ class OandaExecutionHandler(ExecutionHandler):
             if event.order_type == 'MKT':
 
                 if event.direction == 'EXIT':
-                    response = trade_api.close_trade(event.trade_id_to_exit)
+                    response = trade_api.close_trade(event.trade_id_related_to)
                 else:
                     response = order_api.create_new_order(event.direction, event.quantity, event.symbol,
                                                           event.stop_loss, event.take_profit)

@@ -190,4 +190,4 @@ class HistoricCSVDataHandler(DataHandler):
 
         :type symbol: str
         """
-        return len(self.symbol_position_info[symbol]['number_of_items'])
+        return self.symbol_position_info[symbol]['position']

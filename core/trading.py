@@ -18,12 +18,11 @@ import time
 
 
 class Trading(object):
-
     LOG_TYPE_EVENTS = 'events'
 
     def __init__(self, output_directory, symbol_list, heartbeat, configuration,
                  data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger,
-                 enabled_log_types, strategy_params_dict, equity_filename):
+                 enabled_log_types, strategy_params_dict, equity_filename, trades_filename):
         """
 
         :type output_directory: str
@@ -39,6 +38,7 @@ class Trading(object):
         :type enabled_log_types: []
         :type strategy_params_dict: {}
         :type equity_filename: str
+        :type trades_filename: str
         """
 
         self.output_directory = output_directory
@@ -54,6 +54,7 @@ class Trading(object):
         self.enabled_log_types = enabled_log_types
         self.strategy_params_dict = strategy_params_dict
         self.equity_filename = equity_filename
+        self.trades_filename = trades_filename
 
         self.start_date = datetime.datetime.now()
         self.initial_capital = 0
@@ -74,7 +75,8 @@ class Trading(object):
                                                                            self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory, self.equity_filename, self.position_size_handler)
+                                            self.output_directory, self.equity_filename, self.trades_filename,
+                                            self.position_size_handler)
         self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
@@ -88,7 +90,7 @@ class Trading(object):
         print('Trading started at {}'.format(datetime.datetime.now()))
         print('Timeframe: {}'.format(self.configuration.get_option(Configuration.OPTION_TIMEFRAME)))
         print('')
-        
+
         sys.stdout.flush()
 
         self.write_progress(0)

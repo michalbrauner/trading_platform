@@ -31,9 +31,12 @@ class Strategy(object):
     def calculate_stop_loss_price(self, price, stop_loss_pips, direction):
         stop_loss = None
 
-        if direction == 'LONG' and stop_loss_pips is not None:
+        if stop_loss_pips is None or stop_loss_pips == 0:
+            return None
+
+        if direction == 'LONG':
             stop_loss = price - (stop_loss_pips * self.get_pip_value())
-        elif direction == 'SHORT' and stop_loss_pips is not None:
+        elif direction == 'SHORT':
             stop_loss = price + (stop_loss_pips * self.get_pip_value())
 
         return stop_loss
@@ -41,9 +44,12 @@ class Strategy(object):
     def calculate_take_profit_price(self, price, take_profit_pips, direction):
         take_profit = None
 
-        if direction == 'LONG' and take_profit_pips is not None:
+        if take_profit_pips is None or take_profit_pips == 0:
+            return None
+
+        if direction == 'LONG':
             take_profit = price + (take_profit_pips * self.get_pip_value())
-        elif direction == 'SHORT' and take_profit_pips is not None:
+        elif direction == 'SHORT':
             take_profit = price - (take_profit_pips * self.get_pip_value())
 
         return take_profit

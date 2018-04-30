@@ -98,6 +98,8 @@ def run_and_log_optimization_instance(csv_file, csv_file_writer, heartbeat, args
 def run_backtest_instance(args_namespace, events_log_file, heartbeat, sl, tp, short_window, long_window, equity_filename,
                           trained_model_file):
 
+    trades_filename = 'trades.csv'
+
     strategy_params = dict(
         stop_loss_pips=sl,
         take_profit_pips=tp,
@@ -125,7 +127,8 @@ def run_backtest_instance(args_namespace, events_log_file, heartbeat, sl, tp, sh
         TextLogger(events_log_file),
         [Backtest.LOG_TYPE_EVENTS],
         strategy_params,
-        equity_filename
+        equity_filename,
+        trades_filename
     )
     backtest.simulate_trading()
 
