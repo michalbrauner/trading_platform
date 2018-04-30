@@ -16,7 +16,6 @@ from core.position import Position
 
 
 class Portfolio(object):
-
     """
     The Portfolio class handles the positions and market
     value of all instruments at a resolution of a "bar",
@@ -31,7 +30,7 @@ class Portfolio(object):
     portfolio total across bars.
     """
 
-    def __init__(self, bars, events, start_date, initial_capital, output_directory, equity_filename,
+    def __init__(self, bars, events, start_date, initial_capital, output_directory, equity_filename, trades_filename,
                  position_size_handler):
         """
         Initialises the portfolio with bars and an event queue.
@@ -51,16 +50,19 @@ class Portfolio(object):
         self.initial_capital = initial_capital
         self.output_directory = output_directory
         self.equity_filename = equity_filename
+        self.trades_filename = trades_filename
         self.position_size_handler = position_size_handler
 
         self.all_positions = self.construct_all_positions()
-        self.current_positions = dict( (k,v) for k, v in \
-                                       [(s, None) for s in self.symbol_list] )
+
+        self.current_positions = dict((k, v) for k, v in \
+                                      [(s, None) for s in self.symbol_list])
+
         self.all_holdings = self.construct_all_holdings()
         self.current_holdings = self.construct_current_holdings()
+        self.trades = {}
 
     def get_current_position(self, symbol):
-        # type: (str) -> Position
         return self.current_positions[symbol]
 
     def construct_all_positions(self):
@@ -68,7 +70,7 @@ class Portfolio(object):
         Constructs the positions list using the start_date
         to determine when the time index will begin.
         """
-        d = dict( (k,v) for k, v in [(s, None) for s in self.symbol_list] )
+        d = dict((k, v) for k, v in [(s, None) for s in self.symbol_list])
         d['datetime'] = self.start_date
 
         return [d]
@@ -78,7 +80,7 @@ class Portfolio(object):
         Constructs the holdings list using the start_date
         to determine when the time index will begin.
         """
-        d = dict( (k,v) for k, v in [(s, 0.0) for s in self.symbol_list] )
+        d = dict((k, v) for k, v in [(s, 0.0) for s in self.symbol_list])
         d['datetime'] = self.start_date
         d['cash'] = self.initial_capital
         d['commission'] = 0.0
@@ -91,7 +93,7 @@ class Portfolio(object):
         This constructs the dictionary which will hold the instantaneous
         value of the portfolio across all symbols.
         """
-        d = dict( (k,v) for k, v in [(s, 0.0) for s in self.symbol_list] )
+        d = dict((k, v) for k, v in [(s, 0.0) for s in self.symbol_list])
         d['cash'] = self.initial_capital
         d['commission'] = 0.0
         d['total'] = self.initial_capital
@@ -110,7 +112,7 @@ class Portfolio(object):
         )
         # Update positions
         # ================
-        dp = dict( (k,v) for k, v in [(s, 0) for s in self.symbol_list] )
+        dp = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
         dp['datetime'] = latest_datetime
 
         for s in self.symbol_list:
@@ -121,7 +123,7 @@ class Portfolio(object):
 
         # Update holdings
         # ===============
-        dh = dict( (k,v) for k, v in [(s, 0) for s in self.symbol_list] )
+        dh = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])
         dh['datetime'] = latest_datetime
         dh['cash'] = self.current_holdings['cash']
         dh['commission'] = self.current_holdings['commission']
@@ -172,6 +174,32 @@ class Portfolio(object):
         self.current_holdings['commission'] += fill.commission
         self.current_holdings['cash'] -= (cost + fill.commission)
         self.current_holdings['total'] -= (cost + fill.commission)
+
+        if fill.trade_id is not None and fill.trade_id not in self.trades:
+            self.trades[fill.trade_id] = {
+                'fills': [],
+                'opened': None,
+                'closed': None,
+                'openCost': None,
+                'closeCost': None,
+                'commissions': [],
+                'profit': None,
+                'commission': None
+            }
+
+        self.trades[fill.trade_id]['fills'].append(fill)
+        self.trades[fill.trade_id]['commissions'].append(fill.commission)
+
+        if (fill.direction == 'BUY' or fill.direction == 'SELL') and self.trades[fill.trade_id]['opened'] is None:
+            self.trades[fill.trade_id]['opened'] = self.bars.get_latest_bar_datetime(fill.symbol)
+            self.trades[fill.trade_id]['openCost'] = cost
+            self.trades[fill.trade_id]['commission'] = fill.commission
+
+        if fill.direction == 'EXIT' and self.trades[fill.trade_id]['closed'] is None:
+            self.trades[fill.trade_id]['closed'] = self.bars.get_latest_bar_datetime(fill.symbol)
+            self.trades[fill.trade_id]['closeCost'] = cost
+            self.trades[fill.trade_id]['profit'] = cost + self.trades[fill.trade_id]['openCost']
+            self.trades[fill.trade_id]['commission'] = self.trades[fill.trade_id]['commission'] + fill.commission
 
     def get_fill_direction_koeficient(self, fill):
         # type: (FillEvent) -> int
@@ -266,7 +294,7 @@ class Portfolio(object):
         curve = pd.DataFrame(self.all_holdings)
         curve.set_index('datetime', inplace=True)
         curve['returns'] = curve['total'].pct_change()
-        curve['equity_curve'] = (1.0+curve['returns']).cumprod()
+        curve['equity_curve'] = (1.0 + curve['returns']).cumprod()
         self.equity_curve = curve
 
     def output_summary_stats(self):
@@ -276,12 +304,16 @@ class Portfolio(object):
         total_return = self.equity_curve['equity_curve'][-1]
         returns = self.equity_curve['returns']
         pnl = self.equity_curve['equity_curve']
-        sharpe_ratio = create_sharpe_ratio(returns, periods=252*60*6.5)
+        sharpe_ratio = create_sharpe_ratio(returns, periods=252 * 60 * 6.5)
         drawdown, max_dd, dd_duration = create_drawdowns(pnl)
         self.equity_curve['drawdown'] = drawdown
 
-        stats = Stats((total_return - 1.0) * 100.0, sharpe_ratio, max_dd * 100.0, dd_duration)
+        stats = Stats((total_return - 1.0) * 100.0, sharpe_ratio, max_dd * 100.0, dd_duration, self.trades)
 
         self.equity_curve.to_csv(os.path.join(self.output_directory, self.equity_filename))
+
+        trades = pd.DataFrame.from_dict(self.trades, orient='index')
+        trades.drop(['fills', 'commissions', 'openCost', 'closeCost'], axis='columns', inplace=True)
+        trades.to_csv(os.path.join(self.output_directory, self.trades_filename), index_label='tradeId')
 
         return stats

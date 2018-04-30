@@ -16,6 +16,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
     before implementation with a more sophisticated execution
     handler.
     """
+
     def __init__(self, bars, events):
         """
         Initialises the handler, setting the event queues
@@ -27,6 +28,13 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.bars = bars
         self.events = events
         self.limit_and_stop_orders = list()
+        self.next_trade_id = 1000
+
+    def create_next_trade_id(self):
+        id = self.next_trade_id
+        self.next_trade_id = self.next_trade_id + 1
+
+        return id
 
     def execute_order(self, event):
         """
@@ -37,8 +45,14 @@ class SimulatedExecutionHandler(ExecutionHandler):
         """
         if event.type == 'ORDER':
             if event.order_type == 'MKT':
+                if event.trade_id_related_to is not None:
+                    trade_id = event.trade_id_related_to
+                else:
+                    trade_id = self.create_next_trade_id()
+
                 fill_event = FillEvent(
-                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None
+                    datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
+                    trade_id
                 )
                 self.events.put(fill_event)
 
@@ -46,13 +60,13 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
                 if event.stop_loss is not None:
                     stop_loss_order = OrderEvent(event.symbol, 'STP', event.quantity, reversed_direction, None, None,
-                                       event.stop_loss)
+                                                 event.stop_loss, None, trade_id)
 
                     self.limit_and_stop_orders.append(stop_loss_order)
 
                 if event.take_profit is not None:
                     take_profit_order = OrderEvent(event.symbol, 'LMT', event.quantity, reversed_direction, None, None,
-                                       event.take_profit)
+                                                   event.take_profit, None, trade_id)
 
                     self.limit_and_stop_orders.append(take_profit_order)
 
@@ -66,11 +80,11 @@ class SimulatedExecutionHandler(ExecutionHandler):
             should_be_filled = False
 
             if order.order_type == 'STP' and self.stop_order_should_be_filled(order, price_ask, price_bid):
-                    should_be_filled = True
-                    note = 'StopOrder hit at price Ask={}, Bid={}'.format(price_ask, price_bid)
+                should_be_filled = True
+                note = 'StopOrder hit at price Ask={}, Bid={}'.format(price_ask, price_bid)
             elif order.order_type == 'LMT' and self.limit_order_should_be_filled(order, price_ask, price_bid):
-                    should_be_filled = True
-                    note = 'LimitOrder hit at price Ask={}, Bid={}'.format(price_ask, price_bid)
+                should_be_filled = True
+                note = 'LimitOrder hit at price Ask={}, Bid={}'.format(price_ask, price_bid)
 
             if should_be_filled:
                 new_order = self.make_pending_order_market(order, note)
@@ -81,7 +95,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def stop_order_should_be_filled(self, order, price_ask, price_bid):
         return (order.direction == 'BUY' and price_ask >= order.price) or \
-        (order.direction == 'SELL' and price_bid <= order.price)
+               (order.direction == 'SELL' and price_bid <= order.price)
 
     def limit_order_should_be_filled(self, order, price_ask, price_bid):
         return (order.direction == 'BUY' and price_ask <= order.price) or \
@@ -96,6 +110,9 @@ class SimulatedExecutionHandler(ExecutionHandler):
         new_order.order_type = 'MKT'
         new_order.price = None
         new_order.note = note
+
+        if new_order.trade_id_related_to is not None:
+            new_order.direction = 'EXIT'
 
         return new_order
 
