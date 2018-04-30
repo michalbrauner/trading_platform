@@ -4,6 +4,7 @@ from executionhandlers.execution_handler import ExecutionHandler
 from events.fill_event import FillEvent
 from events.order_event import OrderEvent
 from oanda.order_api_client import OrderApiClient
+from oanda.trade_api_client import TradeApiClient
 from loggers.logger import Logger
 
 try:
@@ -34,24 +35,33 @@ class OandaExecutionHandler(ExecutionHandler):
         :type event: OrderEvent
         """
         if event.type == 'ORDER':
-            order = OrderApiClient(self.account_id, self.access_token)
+            order_api = OrderApiClient(self.account_id, self.access_token)
+            trade_api = TradeApiClient(self.account_id, self.access_token)
 
             if event.order_type == 'MKT':
 
                 if event.direction == 'EXIT':
-                    response = order.create_new_exit_order(event.quantity, event.symbol, event.trade_id_to_exit,
-                                                           event.trade_to_exit_direction)
+                    response = trade_api.close_trade(event.trade_id_to_exit)
                 else:
-                    response = order.create_new_order(event.direction, event.quantity, event.symbol, event.stop_loss,
-                                                      event.take_profit)
+                    response = order_api.create_new_order(event.direction, event.quantity, event.symbol,
+                                                          event.stop_loss, event.take_profit)
 
-                if 'errorCode' in response:
+                if 'errorCode' in response or 'errorMessage' in response:
+                    error_message = response['errorMessage']
+
+                    if 'errorCode' in response:
+                        error_code = response['errorCode']
+                    else:
+                        error_code = ''
+
                     self.logger.write(
-                        'Error during executing the order: errorCode=%s, errorMessage="%s"' % (response['errorCode'],
-                                                                                               response[
-                                                                                                   'errorMessage']))
+                        'Error during executing the order: errorCode=%s, errorMessage="%s"' % (
+                            error_code, error_message))
                 else:
-                    trade_id = int(response['orderFillTransaction']['orderID'])
+                    if 'tradeOpened' in response['orderFillTransaction']:
+                        trade_id = int(response['orderFillTransaction']['tradeOpened']['tradeID'])
+                    else:
+                        trade_id = 0
 
                     fill_event = FillEvent(
                         datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
