@@ -180,8 +180,8 @@ class Portfolio(object):
                 'fills': [],
                 'opened': None,
                 'closed': None,
-                'openCost': None,
-                'closeCost': None,
+                'openCost': .0,
+                'closeCost': .0,
                 'commissions': [],
                 'profit': None,
                 'commission': None
