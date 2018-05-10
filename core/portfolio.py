@@ -184,7 +184,7 @@ class Portfolio(object):
                 'closeCost': .0,
                 'commissions': [],
                 'profit': None,
-                'commission': None
+                'commission': 0
             }
 
         self.trades[fill.trade_id]['fills'].append(fill)
