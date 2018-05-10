@@ -54,6 +54,15 @@ class OandaExecutionHandler(ExecutionHandler):
                     else:
                         error_code = ''
 
+                    # intentionally - when trade is closed by broker (it's already filled, we need to simulate fill)
+                    if error_code == 'TRADE_DOESNT_EXIST' and event.direction == 'EXIT':
+                        fill_event = FillEvent(
+                            datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None,
+                            None, 0
+                        )
+
+                        self.events.put(fill_event)
+
                     self.logger.write(
                         'Error during executing the order: errorCode=%s, errorMessage="%s"' % (
                             error_code, error_message))
