@@ -102,8 +102,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
                (order.direction == 'SELL' and price_bid >= order.price)
 
     def clear_limit_or_stop_orders(self, close_pending_orders_event):
-        self.limit_and_stop_orders = filter(lambda order_item: order_item.symbol != close_pending_orders_event.symbol,
-                                            self.limit_and_stop_orders)
+        self.limit_and_stop_orders = list(filter(lambda order_item: order_item.symbol != close_pending_orders_event.symbol,
+                                            self.limit_and_stop_orders))
 
     def make_pending_order_market(self, order, note):
         new_order = copy.copy(order)

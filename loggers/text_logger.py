@@ -7,7 +7,7 @@ class TextLogger(Logger):
         self.opened_file = None
 
     def open(self):
-        self.opened_file = open(self.filename, 'wb')
+        self.opened_file = open(self.filename, 'w')
 
     def close(self):
         self.opened_file.close()

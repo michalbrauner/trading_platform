@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from strategies.daily_forecast.optimization_and_validation.train_test_split import TrainTestSplit
 
 from events.signal_event import SignalEvent
-from strategy import Strategy
+from strategies.strategy import Strategy
 from machine_learning.lagged_series import create_lagged_series
 from core.portfolio import Portfolio
 from datahandlers.data_handler import DataHandler
