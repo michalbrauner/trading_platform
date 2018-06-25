@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from builtins import type
 
 
 class Event(object):
@@ -9,7 +10,18 @@ class Event(object):
     """
     __metaclass__ = ABCMeta
 
+    def __init__(self, type: str):
+        self._type = type
+
     @abstractmethod
     def get_as_string(self):
         raise NotImplementedError("Should implement get_as_string()")
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @type.setter
+    def type(self, val: str) -> None:
+        self._type = val
 

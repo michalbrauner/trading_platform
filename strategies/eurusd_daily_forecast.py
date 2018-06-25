@@ -19,6 +19,7 @@ from machine_learning.lagged_series import create_lagged_series
 from core.portfolio import Portfolio
 from datahandlers.data_handler import DataHandler
 import argparser_tools.basic
+from events.event import Event
 
 import numpy as np
 
@@ -170,7 +171,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         return model
 
-    def calculate_signals(self, event):
+    def calculate_signals(self, event: Event):
         symbol = self.symbol_list[0]
         datetime_now = self.datetime_now
 

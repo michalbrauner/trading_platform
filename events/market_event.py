@@ -8,10 +8,7 @@ class MarketEvent(Event):
     """
 
     def __init__(self):
-        """
-        Initialises the MarketEvent.
-        """
-        self.type = 'MARKET'
+        super().__init__('MARKET')
 
     def get_as_string(self):
         return ''

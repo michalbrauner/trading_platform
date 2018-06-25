@@ -1,5 +1,6 @@
 from events.event import Event
 from datetime import datetime
+from typing import Optional
 
 
 class FillEvent(Event):
@@ -10,20 +11,11 @@ class FillEvent(Event):
     the commission of the trade from the brokerage.
     """
 
-    def __init__(self, timeindex, symbol, exchange, quantity,
-                 direction, fill_cost, commission=None, trade_id=None):
-        """
+    def __init__(self, timeindex: datetime, symbol: str, exchange: str, quantity: float, direction: str,
+                 fill_cost: Optional[float] = None, commission: Optional[float] = None, trade_id: Optional[int] = None):
 
-        :type timeindex: datetime
-        :type symbol: str
-        :type exchange: str
-        :type quantity: float
-        :type direction: str
-        :type fill_cost: float|None
-        :type commission: float|None
-        :type trade_id: int|None
-        """
-        self.type = 'FILL'
+        super().__init__('FILL')
+
         self.timeindex = timeindex
         self.symbol = symbol
         self.exchange = exchange

@@ -15,8 +15,7 @@ class DataHandlerFactory:
     def __init__(self):
         pass
 
-    def create_from_settings(self, configuration, events, symbol_list):
-        # type: (Configuration, queue.Queue, []) -> DataHandler
+    def create_from_settings(self, configuration: Configuration, events: queue.Queue, symbol_list: list) -> DataHandler:
 
         if configuration.data_handler_name == HistoricCSVDataHandler:
             return self.create_historic_csv_data_handler(events, symbol_list,

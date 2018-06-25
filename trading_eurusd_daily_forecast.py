@@ -35,7 +35,7 @@ def main():
     configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY,
                              max(strategy_params['sma_short_period'], strategy_params['sma_long_period']))
 
-    trading = Trading(args_namespace.output_directory, args_namespace.symbols, 0,
+    trading = Trading(args_namespace.output_directory, list(args_namespace.symbols), 0,
                       configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, strategy,
                       FixedPositionSize(0.01), TextLogger(events_log_file), [Trading.LOG_TYPE_EVENTS], strategy_params,
                       'equity.csv', 'trades.csv')
