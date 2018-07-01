@@ -10,8 +10,8 @@ import pandas as pd
 from events.order_event import OrderEvent
 from events.fill_event import FillEvent
 from events.close_pending_orders_event import ClosePendingOrdersEvent
-from perfomance import create_sharpe_ratio, create_drawdowns
-from stats import Stats
+from core.perfomance import create_sharpe_ratio, create_drawdowns
+from core.stats import Stats
 from core.position import Position
 
 

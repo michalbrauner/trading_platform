@@ -14,11 +14,12 @@ from sklearn.ensemble import RandomForestClassifier
 from strategies.daily_forecast.optimization_and_validation.train_test_split import TrainTestSplit
 
 from events.signal_event import SignalEvent
-from strategy import Strategy
+from strategies.strategy import Strategy
 from machine_learning.lagged_series import create_lagged_series
 from core.portfolio import Portfolio
 from datahandlers.data_handler import DataHandler
 import argparser_tools.basic
+from events.event import Event
 
 import numpy as np
 
@@ -170,7 +171,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
         return model
 
-    def calculate_signals(self, event):
+    def calculate_signals(self, event: Event):
         symbol = self.symbol_list[0]
         datetime_now = self.datetime_now
 

@@ -7,7 +7,9 @@ from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
 from oanda.symbol_name_converter import SymbolNameConverter
-import string
+from typing import Type
+from core.portfolio import Portfolio
+from strategies.strategy import Strategy
 
 try:
     import Queue as queue
@@ -20,26 +22,11 @@ import time
 class Trading(object):
     LOG_TYPE_EVENTS = 'events'
 
-    def __init__(self, output_directory, symbol_list, heartbeat, configuration,
-                 data_handler_factory, execution_handler_factory, portfolio, strategy, position_size_handler, logger,
-                 enabled_log_types, strategy_params_dict, equity_filename, trades_filename):
-        """
-
-        :type output_directory: str
-        :type symbol_list: []
-        :type heartbeat: int
-        :type configuration: Configuration
-        :type data_handler_factory: DataHandlerFactory
-        :type execution_handler_factory: ExecutionHandlerFactory
-        :type portfolio: Type[Portfolio]
-        :type strategy: Type[Strategy]
-        :type position_size_handler: PositionSizeHandler
-        :type logger: Logger
-        :type enabled_log_types: []
-        :type strategy_params_dict: {}
-        :type equity_filename: str
-        :type trades_filename: str
-        """
+    def __init__(self, output_directory: str, symbol_list: list, heartbeat: int, configuration: Configuration,
+                 data_handler_factory: DataHandlerFactory, execution_handler_factory: ExecutionHandlerFactory,
+                 portfolio: Type[Portfolio], strategy: Type[Strategy], position_size_handler: PositionSizeHandler,
+                 logger: Logger, enabled_log_types: list, strategy_params_dict: dict, equity_filename: str,
+                 trades_filename: str):
 
         self.output_directory = output_directory
         self.symbol_list = SymbolNameConverter().convert_symbol_names_to_oanda_symbol_names(symbol_list)
@@ -168,8 +155,8 @@ class Trading(object):
 
         spaces = [' '] * 20
 
-        print('Trading{} ({}){}'.format(string.join(dots, ''), string.join(number_of_bars_for_symbols, ', '),
-                                        string.join(spaces, '')), end='\r')
+        print('Trading{} ({}){}'.format(str.join('', dots), str.join(', ', number_of_bars_for_symbols),
+                                        str.join('', spaces)), end='\r')
 
         sys.stdout.flush()
 

@@ -17,8 +17,7 @@ class DataHandler(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_symbol_list(self):
-        # type: () -> []
+    def get_symbol_list(self) -> list:
         raise NotImplementedError("Should implement get_symbol_list()")
 
     @abstractmethod

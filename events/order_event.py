@@ -22,8 +22,8 @@ class OrderEvent(Event):
         trade_id_related_to
         trade_to_exit_direction
         """
+        super().__init__('ORDER')
 
-        self.type = 'ORDER'
         self.symbol = symbol
         self.order_type = order_type
         self.quantity = quantity

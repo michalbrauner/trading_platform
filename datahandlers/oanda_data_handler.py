@@ -16,9 +16,9 @@ from datahandlers.data_handler import DataHandler
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events, symbol_list, stream, instrument_api_client, time_frame,
-                 number_of_bars_preload_from_history):
-        # type: (queue.Queue, [], OandaPriceStream, InstrumentApiClient, str, int) -> None
+    def __init__(self, events: queue.Queue, symbol_list: list, stream: OandaPriceStream,
+                 instrument_api_client: InstrumentApiClient, time_frame: str,
+                 number_of_bars_preload_from_history: int) -> None:
 
         self.events = events
         self.symbol_list = symbol_list
@@ -39,8 +39,7 @@ class OandaDataHandler(DataHandler):
         self.stream = stream
         self.stream.connect_to_stream()
 
-    def get_symbol_list(self):
-        # type: () -> []
+    def get_symbol_list(self) -> list:
         return self.symbol_list
 
     def backtest_should_continue(self):
