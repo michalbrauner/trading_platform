@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import datetime
 from events.signal_event import SignalEvent
-from strategy import Strategy
+from strategies.strategy import Strategy
 import argparser_tools.basic
 
 

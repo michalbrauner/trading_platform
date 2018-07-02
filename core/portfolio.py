@@ -313,7 +313,8 @@ class Portfolio(object):
         self.equity_curve.to_csv(os.path.join(self.output_directory, self.equity_filename))
 
         trades = pd.DataFrame.from_dict(self.trades, orient='index')
-        trades.drop(['fills', 'commissions', 'openCost', 'closeCost'], axis='columns', inplace=True)
-        trades.to_csv(os.path.join(self.output_directory, self.trades_filename), index_label='tradeId')
+        if not trades.empty:
+            trades.drop(['fills', 'commissions', 'openCost', 'closeCost'], axis='columns', inplace=True)
+            trades.to_csv(os.path.join(self.output_directory, self.trades_filename), index_label='tradeId')
 
         return stats
