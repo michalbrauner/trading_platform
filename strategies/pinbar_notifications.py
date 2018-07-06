@@ -6,6 +6,8 @@ from datahandlers.data_handler import DataHandler
 from core.portfolio import Portfolio
 from events.event import Event
 import argparse
+import urllib.request
+import json
 
 try:
     import Queue as queue
@@ -21,6 +23,8 @@ class PinBarNotificationsStrategy(Strategy):
 
         # Set to True if a symbol is in the market
         self.bought = self._calculate_initial_bought()
+
+        self.webhook_to_call = 'https://hooks.zapier.com/hooks/catch/3483057/w8sbxq/'
 
     def _calculate_initial_bought(self) -> dict:
         bought = {}
@@ -49,10 +53,17 @@ class PinBarNotificationsStrategy(Strategy):
 
                 if body_to_bar_ratio <= .2:
                     if bigger_tail >= .7 and smaller_tail <= .2:
-                        pass
+                        self.notify_about_pinbar(symbol)
 
-    def notify_about_pinbar(self):
-        pass
+    def notify_about_pinbar(self, symbol: str) -> None:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('Content-Type', 'application/json')]
+
+        data = json.dumps([{'symbol': symbol}])
+        data = data.encode('ascii')
+
+        with opener.open(self.webhook_to_call, data) as response:
+            response = response.read().decode('utf-8')
 
     @staticmethod
     def get_strategy_params(args_namespace) -> dict:

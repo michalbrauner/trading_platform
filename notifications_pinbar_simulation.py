@@ -24,7 +24,8 @@ def main():
 
     strategy_params = strategy.get_strategy_params(args_namespace)
 
-    configuration = Configuration(data_handler_name=HistoricCSVDataHandler, execution_handler_name=SimulatedExecutionHandler)
+    configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
+                                  execution_handler_name=SimulatedExecutionHandler)
 
     configuration.set_option(Configuration.OPTION_CSV_DIR, args_namespace.data_directory)
 
