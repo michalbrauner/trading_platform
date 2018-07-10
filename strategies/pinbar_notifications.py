@@ -16,10 +16,11 @@ except ImportError:
 
 
 class PinBarNotificationsStrategy(Strategy):
-    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue):
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue, send_notifications: bool):
         self.bars = bars
         self.events = events
         self.portfolio = portfolio
+        self.send_notifications = send_notifications
 
         # Set to True if a symbol is in the market
         self.bought = self._calculate_initial_bought()
@@ -53,7 +54,8 @@ class PinBarNotificationsStrategy(Strategy):
 
                 if body_to_bar_ratio <= .2:
                     if bigger_tail >= .7 and smaller_tail <= .2:
-                        self.notify_about_pinbar(symbol)
+                        if self.send_notifications:
+                            self.notify_about_pinbar(symbol)
 
     def notify_about_pinbar(self, symbol: str) -> None:
         opener = urllib.request.build_opener()
@@ -67,7 +69,9 @@ class PinBarNotificationsStrategy(Strategy):
 
     @staticmethod
     def get_strategy_params(args_namespace) -> dict:
-        return dict()
+        return dict(
+            send_notifications=False
+        )
 
     @staticmethod
     def create_argument_parser(simulation_only: bool) -> argparse.ArgumentParser:
