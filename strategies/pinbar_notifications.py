@@ -44,18 +44,20 @@ class PinBarNotificationsStrategy(Strategy):
                 price_low = self.bars.get_latest_bar_value(symbol, 'low_bid')
 
                 size_of_bar = abs(price_high - price_low)
-                size_of_body = abs(price_open - price_close)
-                body_to_bar_ratio = size_of_body / size_of_bar
-                upper_tail_to_bar_ratio = (price_high - max(price_open, price_close)) / size_of_bar
-                lower_tail_to_bar_ratio = (min(price_open, price_close) - price_low) / size_of_bar
 
-                bigger_tail = max(lower_tail_to_bar_ratio, upper_tail_to_bar_ratio)
-                smaller_tail = min(lower_tail_to_bar_ratio, upper_tail_to_bar_ratio)
+                if size_of_bar > 0:
+                    size_of_body = abs(price_open - price_close)
+                    body_to_bar_ratio = size_of_body / size_of_bar
+                    upper_tail_to_bar_ratio = (price_high - max(price_open, price_close)) / size_of_bar
+                    lower_tail_to_bar_ratio = (min(price_open, price_close) - price_low) / size_of_bar
 
-                if body_to_bar_ratio <= .2:
-                    if bigger_tail >= .7 and smaller_tail <= .2:
-                        if self.send_notifications:
-                            self.notify_about_pinbar(symbol)
+                    bigger_tail = max(lower_tail_to_bar_ratio, upper_tail_to_bar_ratio)
+                    smaller_tail = min(lower_tail_to_bar_ratio, upper_tail_to_bar_ratio)
+
+                    if body_to_bar_ratio <= .2:
+                        if bigger_tail >= .7 and smaller_tail <= .2:
+                            if self.send_notifications:
+                                self.notify_about_pinbar(symbol)
 
     def notify_about_pinbar(self, symbol: str) -> None:
         opener = urllib.request.build_opener()
