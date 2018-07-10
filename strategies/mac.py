@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import argparser_tools.basic
 from events.signal_event import SignalEvent
-from strategy import Strategy
+from strategies.strategy import Strategy
 
 
 class MovingAverageCrossStrategy(Strategy):

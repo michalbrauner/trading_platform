@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-def create_sharpe_ratio(returns, periods=252):
+def create_sharpe_ratio(returns, periods: int = 252):
     """
     Create the Sharpe ratio for the strategy, based on a
     benchmark of zero (i.e. no risk-free rate information).
@@ -13,7 +13,12 @@ def create_sharpe_ratio(returns, periods=252):
     periods - Daily (252), Hourly (252*6.5), Minutely(252*6.5*60) etc.
     """
 
-    return np.sqrt(periods) * (np.mean(returns)) / np.std(returns)
+    returns_std = np.std(returns)
+
+    if returns_std > 0:
+        return np.sqrt(periods) * (np.mean(returns)) / returns_std
+    else:
+        return 0
 
 
 def create_drawdowns(pnl):
