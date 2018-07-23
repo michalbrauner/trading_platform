@@ -10,6 +10,9 @@ from oanda.symbol_name_converter import SymbolNameConverter
 from typing import Type
 from core.portfolio import Portfolio
 from strategies.strategy import Strategy
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from threading import Thread
 
 try:
     import Queue as queue
@@ -70,7 +73,11 @@ class Trading(object):
                                                                                      self.data_handler,
                                                                                      self.events, self.logger)
 
-    def _run(self):
+    def _start_worker(self, loop):
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
+    async def _run(self):
         if self.logger is not None:
             self.logger.open()
 
@@ -80,16 +87,43 @@ class Trading(object):
 
         sys.stdout.flush()
 
-        self.write_progress(0)
+        worker_loop = asyncio.new_event_loop()
+
+        futures = {}
+
+        for symbol in self.symbol_list:
+            futures[symbol] = asyncio.run_coroutine_threadsafe(self._run_symbol(symbol), worker_loop)
+
+        while True:
+            all_are_done = True
+
+            for future_symbol in futures:
+                all_are_done = all_are_done and futures[future_symbol].done()
+                if all_are_done is False:
+                    break
+
+            if all_are_done:
+                break
+
+        worker_loop.close()
+
+        print('')
+        sys.stdout.flush()
+
+        if self.logger is not None:
+            self.logger.close()
+
+    async def _run_symbol(self, symbol: str):
+        self.write_progress(0, symbol)
 
         i = 0
         while True:
             i += 1
-            self.write_progress(i)
+            self.write_progress(i, symbol)
 
             # Update the market bars
             if self.data_handler.backtest_should_continue():
-                self.data_handler.update_bars()
+                self.data_handler.update_bars(symbol)
             else:
                 break
 
@@ -121,12 +155,6 @@ class Trading(object):
 
             time.sleep(self.heartbeat)
 
-        print('')
-        sys.stdout.flush()
-
-        if self.logger is not None:
-            self.logger.close()
-
     def log_message(self, iteration, message):
         if self.logger is not None and message != '':
             self.logger.write('#%d - %s' % (iteration, message))
@@ -140,15 +168,15 @@ class Trading(object):
 
             self.log_message(iteration, log)
 
-    def write_progress(self, iteration):
+    def write_progress(self, iteration: int, symbol: str):
         number_of_bars_for_symbols = []
-        for symbol in self.symbol_list:
-            number_of_bars = self.data_handler.get_number_of_bars(symbol)
-            last_bar = self.data_handler.get_latest_bar(symbol) if number_of_bars > 0 else None
 
-            number_of_bars_for_symbols.append(
-                '{}: {} bars, last datetime open: {}'.format(symbol, number_of_bars,
-                                                             last_bar['datetime'] if last_bar is not None else ''))
+        number_of_bars = self.data_handler.get_number_of_bars(symbol)
+        last_bar = self.data_handler.get_latest_bar(symbol) if number_of_bars > 0 else None
+
+        number_of_bars_for_symbols.append(
+            '{}: {} bars, last datetime open: {}'.format(symbol, number_of_bars,
+                                                         last_bar['datetime'] if last_bar is not None else ''))
 
         number_of_dots = iteration % 10
         dots = ['.'] * number_of_dots
@@ -172,5 +200,9 @@ class Trading(object):
         print("Fills: %s" % self.fills)
 
     def run(self):
-        self._run()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self._run())
+
         self._save_equity_and_generate_stats()

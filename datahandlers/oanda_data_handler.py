@@ -65,7 +65,7 @@ class OandaDataHandler(DataHandler):
         (sybmbol, datetime, open, low, high, close, volume).
         """
 
-        openedBar = pd.DataFrame()
+        opened_bar = pd.DataFrame()
         opened_bar_finishes_at = None
         opened_bar_starts_at = None
 
@@ -73,7 +73,7 @@ class OandaDataHandler(DataHandler):
 
         for price in self.stream.get_price():
             if price['instrument'] == symbol:
-                newPriceData = pd.DataFrame(price, index=[price['datetime']])
+                new_price_data = pd.DataFrame(price, index=[price['datetime']])
 
                 price_datetime = self.get_price_datetime(price['datetime'])
 
@@ -83,18 +83,18 @@ class OandaDataHandler(DataHandler):
                     opened_bar_finishes_at = bar_borders[1]
                     opened_bar_starts_at = bar_borders[0]
 
-                if opened_bar_finishes_at >= price_datetime or 'datetime' not in openedBar:
-                    openedBar = openedBar.append(newPriceData)
+                if opened_bar_finishes_at >= price_datetime or 'datetime' not in opened_bar:
+                    opened_bar = opened_bar.append(new_price_data)
                 else:
-                    price_bid_open = float(openedBar['bid'][0])
-                    price_bid_close = float(openedBar['bid'][-1])
-                    price_bid_high = float(openedBar['bid'].max())
-                    price_bid_low = float(openedBar['bid'].min())
+                    price_bid_open = float(opened_bar['bid'][0])
+                    price_bid_close = float(opened_bar['bid'][-1])
+                    price_bid_high = float(opened_bar['bid'].max())
+                    price_bid_low = float(opened_bar['bid'].min())
 
-                    price_ask_open = float(openedBar['ask'][0])
-                    price_ask_close = float(openedBar['ask'][-1])
-                    price_ask_high = float(openedBar['ask'].max())
-                    price_ask_low = float(openedBar['ask'].min())
+                    price_ask_open = float(opened_bar['ask'][0])
+                    price_ask_close = float(opened_bar['ask'][-1])
+                    price_ask_high = float(opened_bar['ask'].max())
+                    price_ask_low = float(opened_bar['ask'].min())
 
                     data = self.create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low,
                                                 price_ask_open, price_bid_close, price_bid_high, price_bid_low,
@@ -210,19 +210,18 @@ class OandaDataHandler(DataHandler):
         else:
             return np.array([b[val_type] for b in bars_list])
 
-    def update_bars(self):
+    def update_bars(self, symbol: str):
         """
         Pushes the latest bar to the latest_symbol_data structure
-        for all symbols in the symbol list.
+        for symbol
         """
-        for s in self.symbol_list:
-            try:
-                bar = next(self._get_new_bar(s))
-            except StopIteration:
-                self.continue_backtest = False
-            else:
-                if bar is not None:
-                    self.append_new_price_data(s, bar)
+        try:
+            bar = next(self._get_new_bar(symbol))
+        except StopIteration:
+            self.continue_backtest = False
+        else:
+            if bar is not None:
+                self.append_new_price_data(s, bar)
 
         self.events.put(MarketEvent())
 
