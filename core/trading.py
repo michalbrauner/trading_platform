@@ -11,8 +11,8 @@ from typing import Type
 from core.portfolio import Portfolio
 from strategies.strategy import Strategy
 import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
-from threading import Thread
 
 try:
     import Queue as queue
@@ -57,6 +57,9 @@ class Trading(object):
 
         self.stats = None
 
+        summary_file = os.path.join(self.output_directory, 'output_summary.txt')
+        self.output_summary_file = open(summary_file, 'w')
+
         self._generate_trading_instances()
 
     def _generate_trading_instances(self):
@@ -73,10 +76,6 @@ class Trading(object):
                                                                                      self.data_handler,
                                                                                      self.events, self.logger)
 
-    def _start_worker(self, loop):
-        asyncio.set_event_loop(loop)
-        loop.run_forever()
-
     async def _run(self):
         if self.logger is not None:
             self.logger.open()
@@ -87,25 +86,18 @@ class Trading(object):
 
         sys.stdout.flush()
 
-        worker_loop = asyncio.new_event_loop()
+        loop = asyncio.get_event_loop()
 
-        futures = {}
+        futures = []
+
+        executor = ThreadPoolExecutor(max_workers=len(self.symbol_list))
 
         for symbol in self.symbol_list:
-            futures[symbol] = asyncio.run_coroutine_threadsafe(self._run_symbol(symbol), worker_loop)
+            futures.append(loop.run_in_executor(executor, self._run_symbol, symbol))
 
-        while True:
-            all_are_done = True
-
-            for future_symbol in futures:
-                all_are_done = all_are_done and futures[future_symbol].done()
-                if all_are_done is False:
-                    break
-
-            if all_are_done:
-                break
-
-        worker_loop.close()
+        done, futures = await asyncio.wait(futures, loop=loop, return_when=asyncio.FIRST_COMPLETED)
+        for f in done:
+            await f
 
         print('')
         sys.stdout.flush()
@@ -113,13 +105,16 @@ class Trading(object):
         if self.logger is not None:
             self.logger.close()
 
-    async def _run_symbol(self, symbol: str):
-        self.write_progress(0, symbol)
+        if self.output_summary_file is not None:
+            self.output_summary_file.close()
+
+    def _run_symbol(self, symbol: str):
+        self.write_progress(0)
 
         i = 0
         while True:
             i += 1
-            self.write_progress(i, symbol)
+            self.write_progress(i)
 
             # Update the market bars
             if self.data_handler.backtest_should_continue():
@@ -168,25 +163,25 @@ class Trading(object):
 
             self.log_message(iteration, log)
 
-    def write_progress(self, iteration: int, symbol: str):
+    def write_progress(self, iteration: int):
         number_of_bars_for_symbols = []
 
-        number_of_bars = self.data_handler.get_number_of_bars(symbol)
-        last_bar = self.data_handler.get_latest_bar(symbol) if number_of_bars > 0 else None
+        for symbol in self.symbol_list:
+            number_of_bars = self.data_handler.get_number_of_bars(symbol)
+            last_bar = self.data_handler.get_latest_bar(symbol) if number_of_bars > 0 else None
 
-        number_of_bars_for_symbols.append(
-            '{}: {} bars, last datetime open: {}'.format(symbol, number_of_bars,
-                                                         last_bar['datetime'] if last_bar is not None else ''))
+            number_of_bars_for_symbols.append(
+                '  --> {}: {} bars, last datetime open: {}\n'.format(symbol, number_of_bars, last_bar[
+                    'datetime'] if last_bar is not None else ''))
 
         number_of_dots = iteration % 10
         dots = ['.'] * number_of_dots
 
-        spaces = [' '] * 20
+        self.output_summary_file.seek(0)
+        self.output_summary_file.write('Trading{}\n'.format(str.join('', dots)), )
+        self.output_summary_file.write('{}'.format(str.join('', number_of_bars_for_symbols)))
 
-        print('Trading{} ({}){}'.format(str.join('', dots), str.join(', ', number_of_bars_for_symbols),
-                                        str.join('', spaces)), end='\r')
-
-        sys.stdout.flush()
+        self.output_summary_file.flush()
 
     def _save_equity_and_generate_stats(self):
         self.portfolio.create_equity_curve_dataframe()

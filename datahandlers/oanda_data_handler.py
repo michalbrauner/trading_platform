@@ -1,10 +1,12 @@
 import numpy as np
-import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 from events.market_event import MarketEvent
 from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
+from datahandlers.oanda_data_handler_bars_provider import OandaDataHandlerBarsProvider
+import asyncio
 
 try:
     import Queue as queue
@@ -37,7 +39,11 @@ class OandaDataHandler(DataHandler):
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
         self.stream = stream
-        self.stream.connect_to_stream()
+        self.bars_provider = OandaDataHandlerBarsProvider(stream, symbol_list, TimeFrame(self.time_frame))
+
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor(max_workers=1)
+        loop.run_in_executor(executor, self.bars_provider.start_providing_bars)
 
     def get_symbol_list(self) -> list:
         return self.symbol_list
@@ -60,47 +66,11 @@ class OandaDataHandler(DataHandler):
             self.append_new_price_data(symbol, bar_data)
 
     def _get_new_bar(self, symbol):
-        """
-        Returns the latest bar from the data feed as a tuple of
-        (sybmbol, datetime, open, low, high, close, volume).
-        """
+        symbol_data_queue = self.bars_provider.get_queue(symbol)
 
-        opened_bar = pd.DataFrame()
-        opened_bar_finishes_at = None
-        opened_bar_starts_at = None
-
-        timeframe = TimeFrame(self.time_frame)
-
-        for price in self.stream.get_price():
-            if price['instrument'] == symbol:
-                new_price_data = pd.DataFrame(price, index=[price['datetime']])
-
-                price_datetime = self.get_price_datetime(price['datetime'])
-
-                bar_borders = timeframe.get_time_frame_border(price_datetime)
-
-                if opened_bar_finishes_at is None:
-                    opened_bar_finishes_at = bar_borders[1]
-                    opened_bar_starts_at = bar_borders[0]
-
-                if opened_bar_finishes_at >= price_datetime or 'datetime' not in opened_bar:
-                    opened_bar = opened_bar.append(new_price_data)
-                else:
-                    price_bid_open = float(opened_bar['bid'][0])
-                    price_bid_close = float(opened_bar['bid'][-1])
-                    price_bid_high = float(opened_bar['bid'].max())
-                    price_bid_low = float(opened_bar['bid'].min())
-
-                    price_ask_open = float(opened_bar['ask'][0])
-                    price_ask_close = float(opened_bar['ask'][-1])
-                    price_ask_high = float(opened_bar['ask'].max())
-                    price_ask_low = float(opened_bar['ask'].min())
-
-                    data = self.create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low,
-                                                price_ask_open, price_bid_close, price_bid_high, price_bid_low,
-                                                price_bid_open)
-
-                    yield data
+        while True:
+            if not symbol_data_queue.empty():
+                yield symbol_data_queue.get_nowait()
 
     @staticmethod
     def get_price_datetime(datetime_as_string):
@@ -147,7 +117,10 @@ class OandaDataHandler(DataHandler):
 
         self.latest_symbol_data[symbol].append(data)
 
-    def get_latest_bar(self, symbol):
+    def has_some_bars(self, symbol: str) -> bool:
+        return symbol in self.latest_symbol_data and len(self.latest_symbol_data[symbol]) > 0
+
+    def get_latest_bar(self, symbol: str):
         """
         Returns the last bar from the latest_symbol list.
         """
@@ -221,7 +194,7 @@ class OandaDataHandler(DataHandler):
             self.continue_backtest = False
         else:
             if bar is not None:
-                self.append_new_price_data(s, bar)
+                self.append_new_price_data(symbol, bar)
 
         self.events.put(MarketEvent())
 

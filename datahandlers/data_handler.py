@@ -25,6 +25,10 @@ class DataHandler(object):
         raise NotImplementedError("Should implement backtest_should_continue()")
 
     @abstractmethod
+    def has_some_bars(self, symbol: str) -> bool:
+        raise NotImplementedError("Should implement has_some_bars()")
+
+    @abstractmethod
     def get_latest_bar(self, symbol):
         """
         Returns the last bar updated.

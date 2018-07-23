@@ -107,9 +107,14 @@ class Portfolio(object):
         current market data at this stage is known (OHLCV).
         Makes use of a MarketEvent from the events queue.
         """
-        latest_datetime = self.bars.get_latest_bar_datetime(
-            self.symbol_list[0]
-        )
+        latest_datetime = None
+        for symbol in self.symbol_list:
+            if self.bars.has_some_bars(symbol):
+                latest_datetime_for_symbol = self.bars.get_latest_bar_datetime(symbol)
+
+                if latest_datetime is None or latest_datetime < latest_datetime_for_symbol:
+                    latest_datetime = latest_datetime_for_symbol
+
         # Update positions
         # ================
         dp = dict((k, v) for k, v in [(s, 0) for s in self.symbol_list])

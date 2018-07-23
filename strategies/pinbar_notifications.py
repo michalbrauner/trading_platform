@@ -37,6 +37,9 @@ class PinBarNotificationsStrategy(Strategy):
     def calculate_signals(self, event: Event):
         if event.type == 'MARKET':
             for symbol in self.bars.get_symbol_list():
+                if not self.bars.has_some_bars(symbol):
+                    continue
+
                 bar_date = self.bars.get_latest_bar_datetime(symbol)
                 price_close = self.bars.get_latest_bar_value(symbol, 'close_bid')
                 price_open = self.bars.get_latest_bar_value(symbol, 'open_bid')

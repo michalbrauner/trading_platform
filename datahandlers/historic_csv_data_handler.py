@@ -91,6 +91,9 @@ class HistoricCSVDataHandler(DataHandler):
             self.symbol_position_info[symbol]['position'] = self.symbol_position_info[symbol]['position'] + 1
             yield b
 
+    def has_some_bars(self, symbol: str) -> bool:
+        return symbol in self.latest_symbol_data and len(self.latest_symbol_data[symbol]) > 0
+
     def get_latest_bar(self, symbol):
         """
         Returns the last bar from the latest_symbol list.
