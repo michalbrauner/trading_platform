@@ -5,6 +5,7 @@ import time
 class TimeFrame(object):
     TIME_FRAME_S5 = 'S5'
     TIME_FRAME_M1 = 'M1'
+    TIME_FRAME_M5 = 'M5'
     TIME_FRAME_M15 = 'M15'
     TIME_FRAME_H1 = 'H1'
     TIME_FRAME_H4 = 'H4'
@@ -12,6 +13,7 @@ class TimeFrame(object):
     NUMBER_OF_SECONDS_IN_TIME_FRAMES = {
         TIME_FRAME_S5: 5,
         TIME_FRAME_M1: 60,
+        TIME_FRAME_M5: 60 * 5,
         TIME_FRAME_M15: 60 * 15,
         TIME_FRAME_H1: 60 * 60,
         TIME_FRAME_H4: 60 * 60 * 4,
@@ -39,6 +41,7 @@ class TimeFrame(object):
         return [
             TimeFrame.TIME_FRAME_S5,
             TimeFrame.TIME_FRAME_M1,
+            TimeFrame.TIME_FRAME_M5,
             TimeFrame.TIME_FRAME_M15,
             TimeFrame.TIME_FRAME_H1,
             TimeFrame.TIME_FRAME_H4,
