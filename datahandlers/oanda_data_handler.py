@@ -69,8 +69,7 @@ class OandaDataHandler(DataHandler):
         symbol_data_queue = self.bars_provider.get_queue(symbol)
 
         while True:
-            if not symbol_data_queue.empty():
-                yield symbol_data_queue.get_nowait()
+            yield symbol_data_queue.get(True)
 
     @staticmethod
     def get_price_datetime(datetime_as_string):

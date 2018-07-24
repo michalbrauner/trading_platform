@@ -178,6 +178,9 @@ class Trading(object):
         dots = ['.'] * number_of_dots
 
         self.output_summary_file.seek(0)
+        self.output_summary_file.truncate()
+
+        self.output_summary_file.seek(0)
         self.output_summary_file.write('Trading{}\n'.format(str.join('', dots)), )
         self.output_summary_file.write('{}'.format(str.join('', number_of_bars_for_symbols)))
 
