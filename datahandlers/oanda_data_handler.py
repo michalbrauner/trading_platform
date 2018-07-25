@@ -194,8 +194,7 @@ class OandaDataHandler(DataHandler):
         else:
             if bar is not None:
                 self.append_new_price_data(symbol, bar)
-
-        self.events.put(MarketEvent())
+                self.events.put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):
         return 0

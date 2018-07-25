@@ -169,8 +169,7 @@ class HistoricCSVDataHandler(DataHandler):
         else:
             if bar is not None:
                 self.latest_symbol_data[symbol].append(bar)
-
-        self.events.put(MarketEvent())
+                self.events.put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):
         positions_in_percentage = list()

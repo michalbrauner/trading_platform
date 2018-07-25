@@ -50,6 +50,8 @@ class Trading(object):
         self.initial_capital = 0
 
         self.events = queue.Queue()
+        self.events_per_symbol = dict((symbol, queue.Queue() for (symbol) in self.symbol_list))
+
         self.signals = 0
         self.orders = 0
         self.fills = 0

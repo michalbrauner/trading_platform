@@ -8,9 +8,7 @@ class ClosePendingOrdersEvent(Event):
 
     def __init__(self, symbol):
 
-        super().__init__('CLOSE_PENDING_ORDERS')
-
-        self.symbol = symbol
+        super().__init__('CLOSE_PENDING_ORDERS', symbol)
 
     def get_as_string(self):
         return 'ClosePendingOrders: %s' % self.symbol

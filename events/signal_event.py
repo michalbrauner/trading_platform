@@ -25,10 +25,9 @@ class SignalEvent(Event):
         trade_id_to_exit - Trade to exit
         """
 
-        super().__init__('SIGNAL')
+        super().__init__('SIGNAL', symbol)
 
         self.strategy_id = strategy_id
-        self.symbol = symbol
         self.bar_datetime = bar_datetime
         self.datetime = datetime
         self.signal_type = signal_type
