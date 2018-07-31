@@ -59,6 +59,8 @@ class Backtest(object):
         self.trades_filename = trades_filename
 
         self.events = queue.Queue()
+        self.events_per_symbol = dict(((symbol, queue.Queue()) for (symbol) in self.symbol_list))
+
         self.signals = 0
         self.orders = 0
         self.fills = 0
@@ -70,6 +72,7 @@ class Backtest(object):
     def _generate_trading_instances(self):
 
         self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events,
+                                                                           self.events_per_symbol,
                                                                            self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,

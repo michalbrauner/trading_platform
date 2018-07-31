@@ -7,6 +7,7 @@ from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
 from datahandlers.oanda_data_handler_bars_provider import OandaDataHandlerBarsProvider
 import asyncio
+from typing import Dict
 
 try:
     import Queue as queue
@@ -18,11 +19,14 @@ from datahandlers.data_handler import DataHandler
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events: queue.Queue, symbol_list: list, stream: OandaPriceStream,
+    def __init__(self, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], symbol_list: list,
+                 stream: OandaPriceStream,
                  instrument_api_client: InstrumentApiClient, time_frame: str,
                  number_of_bars_preload_from_history: int) -> None:
 
         self.events = events
+        self.events_per_symbol = events_per_symbol
+
         self.symbol_list = symbol_list
 
         self.symbol_data = {}
@@ -195,6 +199,7 @@ class OandaDataHandler(DataHandler):
             if bar is not None:
                 self.append_new_price_data(symbol, bar)
                 self.events.put(MarketEvent(symbol))
+                self.events_per_symbol[symbol].put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):
         return 0

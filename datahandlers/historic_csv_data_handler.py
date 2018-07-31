@@ -4,8 +4,14 @@ import numpy as np
 import pandas as pd
 import pandas.io.parsers
 from events.market_event import MarketEvent
-
 from datahandlers.data_handler import DataHandler
+from typing import Dict
+from typing import List
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class HistoricCSVDataHandler(DataHandler):
@@ -16,20 +22,17 @@ class HistoricCSVDataHandler(DataHandler):
     trading interface.
     """
 
-    def __init__(self, events, csv_dir, symbol_list):
+    def __init__(self, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], csv_dir: str,
+                 symbol_list: List[str]) -> None:
         """
         Initialises the historic data handler by requesting
         the location of the CSV files and a list of symbols.
 
         It will be assumed that all files are of the form
         'symbol.csv', where symbol is a string in the list.
-
-        Parameters:
-        events - The Event Queue.
-        csv_dir - Absolute directory path to the CSV files.
-        symbol_list - A list of symbol strings.
         """
         self.events = events
+        self.events_per_symbol = events_per_symbol
         self.csv_dir = csv_dir
         self.symbol_list = symbol_list
 
@@ -170,6 +173,7 @@ class HistoricCSVDataHandler(DataHandler):
             if bar is not None:
                 self.latest_symbol_data[symbol].append(bar)
                 self.events.put(MarketEvent(symbol))
+                self.events_per_symbol[symbol].put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):
         positions_in_percentage = list()

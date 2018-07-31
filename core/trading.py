@@ -66,6 +66,7 @@ class Trading(object):
     def _generate_trading_instances(self):
 
         self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events,
+                                                                           self.events_per_symbol,
                                                                            self.symbol_list)
 
         self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,

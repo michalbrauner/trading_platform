@@ -4,6 +4,7 @@ from oanda.stream_factory import StreamFactory
 from datahandlers.oanda_data_handler import DataHandler
 from core.configuration import Configuration
 from oanda.instrument_api_client import InstrumentApiClient
+from typing import Dict
 
 try:
     import Queue as queue
@@ -15,14 +16,15 @@ class DataHandlerFactory:
     def __init__(self):
         pass
 
-    def create_from_settings(self, configuration: Configuration, events: queue.Queue, symbol_list: list) -> DataHandler:
+    def create_from_settings(self, configuration: Configuration, events: queue.Queue,
+                             events_per_symbol: Dict[str, queue.Queue], symbol_list: list) -> DataHandler:
 
         if configuration.data_handler_name == HistoricCSVDataHandler:
-            return self.create_historic_csv_data_handler(events, symbol_list,
+            return self.create_historic_csv_data_handler(events, events_per_symbol, symbol_list,
                                                          configuration.get_option(Configuration.OPTION_CSV_DIR))
 
         if configuration.data_handler_name == OandaDataHandler:
-            return self.create_oanda_data_handler(events, symbol_list,
+            return self.create_oanda_data_handler(events, events_per_symbol, symbol_list,
                                                   configuration.get_option(Configuration.OPTION_ACCOUNT_ID),
                                                   configuration.get_option(Configuration.OPTION_ACCESS_TOKEN),
                                                   configuration.get_option(Configuration.OPTION_TIMEFRAME),
@@ -31,19 +33,18 @@ class DataHandlerFactory:
 
         raise Exception('Unknown DataHandler for {}'.format(configuration.data_handler_name))
 
-    def create_historic_csv_data_handler(self, events, symbol_list, csv_dir):
-        # type: (queue.Queue, [], str) -> DataHandler
+    def create_historic_csv_data_handler(self, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue],
+                                         symbol_list: list, csv_dir: str) -> DataHandler:
 
-        return HistoricCSVDataHandler(events, csv_dir, symbol_list)
+        return HistoricCSVDataHandler(events, events_per_symbol, csv_dir, symbol_list)
 
-    def create_oanda_data_handler(self, events, symbol_list, account_id, access_token, timeframe,
-                                  number_of_bars_preload_from_history):
-        # type: (queue.Queue, [], str, str, str, int) -> DataHandler
-
+    def create_oanda_data_handler(self, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], symbol_list: list,
+                                  account_id: str, access_token: str, timeframe: str,
+                                  number_of_bars_preload_from_history: int) -> DataHandler:
         stream_factory = StreamFactory()
         stream = stream_factory.create(account_id, access_token, symbol_list)
 
         instrument_api_client = InstrumentApiClient(access_token)
 
-        return OandaDataHandler(events, symbol_list, stream, instrument_api_client, timeframe,
+        return OandaDataHandler(events, events_per_symbol, symbol_list, stream, instrument_api_client, timeframe,
                                 number_of_bars_preload_from_history)
