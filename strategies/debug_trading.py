@@ -45,12 +45,15 @@ class DebugTradingStrategy(Strategy):
 
     def calculate_signals(self, event):
         if event.type == 'MARKET':
-            for s in self.symbol_list:
-                if self.portfolio.current_positions[s] == 0:
-                    self.bought[s] = 'OUT'
+            for symbol in self.bars.get_symbol_list():
+                if not self.bars.has_some_bars(symbol):
+                    continue
 
-                bar_date = self.bars.get_latest_bar_datetime(s)
-                bar_price = self.bars.get_latest_bar_value(s, 'close_bid')
+                if self.portfolio.current_positions[symbol] == 0:
+                    self.bought[symbol] = 'OUT'
+
+                bar_date = self.bars.get_latest_bar_datetime(symbol)
+                bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
 
                 dt = datetime.datetime.utcnow()
 
@@ -61,10 +64,11 @@ class DebugTradingStrategy(Strategy):
                 short_signal = signal_from_file == 'short'
                 exit_signal = signal_from_file == 'exit'
 
-                signal_generated = self.calculate_exit_signals(short_signal, long_signal, exit_signal, s, bar_date, dt)
+                signal_generated = self.calculate_exit_signals(short_signal, long_signal, exit_signal, symbol, bar_date,
+                                                               dt)
 
                 if signal_generated is False:
-                    self.calculate_new_signals(short_signal, long_signal, s, bar_date, bar_price, dt)
+                    self.calculate_new_signals(short_signal, long_signal, symbol, bar_date, bar_price, dt)
 
     def calculate_new_signals(self, short_signal, long_signal, s, bar_date, bar_price, dt):
 

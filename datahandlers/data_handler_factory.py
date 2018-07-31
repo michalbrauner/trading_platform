@@ -26,8 +26,8 @@ class DataHandlerFactory:
                                                   configuration.get_option(Configuration.OPTION_ACCOUNT_ID),
                                                   configuration.get_option(Configuration.OPTION_ACCESS_TOKEN),
                                                   configuration.get_option(Configuration.OPTION_TIMEFRAME),
-                                                  configuration.get_option(
-                                                      Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY))
+                                                  int(configuration.get_option(
+                                                      Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY)))
 
         raise Exception('Unknown DataHandler for {}'.format(configuration.data_handler_name))
 

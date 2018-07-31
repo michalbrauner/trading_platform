@@ -27,7 +27,7 @@ def main():
     strategy_params['send_notifications'] = True
 
     configuration = Configuration(data_handler_name=OandaDataHandler, execution_handler_name=OandaExecutionHandler)
-    configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY, 0)
+    configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY, '0')
 
     configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
     configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
