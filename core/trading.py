@@ -27,7 +27,7 @@ class Trading(object):
 
     def __init__(self, output_directory: str, symbol_list: list, heartbeat: int, configuration: Configuration,
                  data_handler_factory: DataHandlerFactory, execution_handler_factory: ExecutionHandlerFactory,
-                 portfolio: Type[Portfolio], strategy: Type[Strategy], position_size_handler: PositionSizeHandler,
+                 portfolio_class: Type[Portfolio], strategy_class: Type[Strategy], position_size_handler: PositionSizeHandler,
                  logger: Logger, enabled_log_types: list, strategy_params_dict: dict, equity_filename: str,
                  trades_filename: str):
 
@@ -37,8 +37,8 @@ class Trading(object):
         self.configuration = configuration
         self.data_handler_factory = data_handler_factory
         self.execution_handler_factory = execution_handler_factory
-        self.portfolio_cls = portfolio
-        self.strategy_cls = strategy
+        self.portfolio_class = portfolio_class
+        self.strategy_class = strategy_class
         self.position_size_handler = position_size_handler
         self.logger = logger
         self.enabled_log_types = enabled_log_types
@@ -69,10 +69,12 @@ class Trading(object):
                                                                            self.events_per_symbol,
                                                                            self.symbol_list)
 
-        self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory, self.equity_filename, self.trades_filename,
-                                            self.position_size_handler)
-        self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
+        self.portfolio = self.portfolio_class(self.data_handler, self.events, self.events_per_symbol, self.start_date,
+                                              self.initial_capital,
+                                              self.output_directory, self.equity_filename, self.trades_filename,
+                                              self.position_size_handler)
+
+        self.strategy = self.strategy_class(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
                                                                                      self.data_handler,

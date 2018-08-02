@@ -13,6 +13,7 @@ from events.close_pending_orders_event import ClosePendingOrdersEvent
 from core.perfomance import create_sharpe_ratio, create_drawdowns
 from core.stats import Stats
 from core.position import Position
+from typing import Dict
 
 
 class Portfolio(object):
@@ -30,7 +31,8 @@ class Portfolio(object):
     portfolio total across bars.
     """
 
-    def __init__(self, bars, events, start_date, initial_capital, output_directory, equity_filename, trades_filename,
+    def __init__(self, bars, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], start_date,
+                 initial_capital, output_directory, equity_filename, trades_filename,
                  position_size_handler):
         """
         Initialises the portfolio with bars and an event queue.
@@ -45,6 +47,7 @@ class Portfolio(object):
         """
         self.bars = bars
         self.events = events
+        self.events_per_symbol = events_per_symbol
         self.symbol_list = self.bars.symbol_list
         self.start_date = start_date
         self.initial_capital = initial_capital
@@ -286,10 +289,12 @@ class Portfolio(object):
 
             if order_event is not None:
                 self.events.put(order_event)
+                self.events_per_symbol[event.symbol].put(order_event)
 
             if event.signal_type == 'EXIT':
                 close_pending_orders_event = ClosePendingOrdersEvent(event.symbol)
                 self.events.put(close_pending_orders_event)
+                self.events_per_symbol[event.symbol].put(close_pending_orders_event)
 
     def create_equity_curve_dataframe(self):
         """

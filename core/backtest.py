@@ -36,7 +36,7 @@ class Backtest(object):
     def __init__(
             self, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, configuration, data_handler_factory,
-            execution_handler_factory, portfolio, strategy, position_size_handler, logger, enabled_logs,
+            execution_handler_factory, portfolio_class, strategy_class, position_size_handler, logger, enabled_logs,
             strategy_params_dict, equity_filename, trades_filename
     ):
         # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, [], {}, str, str) -> None
@@ -49,8 +49,8 @@ class Backtest(object):
         self.configuration = configuration
         self.data_handler_factory = data_handler_factory
         self.execution_handler_factory = execution_handler_factory
-        self.portfolio_cls = portfolio
-        self.strategy_cls = strategy
+        self.portfolio_class = portfolio_class
+        self.strategy_class = strategy_class
         self.position_size_handler = position_size_handler
         self.logger = logger
         self.enabled_log_types = enabled_logs
@@ -72,14 +72,13 @@ class Backtest(object):
     def _generate_trading_instances(self):
 
         self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events,
-                                                                           self.events_per_symbol,
-                                                                           self.symbol_list)
+                                                                           self.events_per_symbol, self.symbol_list)
 
-        self.portfolio = self.portfolio_cls(self.data_handler, self.events, self.start_date, self.initial_capital,
-                                            self.output_directory, self.equity_filename, self.trades_filename,
-                                            self.position_size_handler)
+        self.portfolio = self.portfolio_class(self.data_handler, self.events, self.events_per_symbol, self.start_date,
+                                              self.initial_capital, self.output_directory, self.equity_filename,
+                                              self.trades_filename, self.position_size_handler)
 
-        self.strategy = self.strategy_cls(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
+        self.strategy = self.strategy_class(self.data_handler, self.portfolio, self.events, **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
                                                                                      self.data_handler,
