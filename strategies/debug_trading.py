@@ -4,23 +4,26 @@ import datetime
 from events.signal_event import SignalEvent
 from strategies.strategy import Strategy
 import argparser_tools.basic
+from typing import Dict
+from datahandlers.data_handler import DataHandler
+from core.portfolio import Portfolio
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class DebugTradingStrategy(Strategy):
-    def __init__(self, bars, portfolio, events, signal_file, stop_loss_pips=None, take_profit_pips=None):
-        """
-        Initialises the Moving Average Cross Strategy.
-        Parameters:
-        bars - The DataHandler object that provides bar information
-        portfolio
-        events - The Event Queue object.
-        stop_loss_pips
-        take_profit_pips
-        """
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue,
+                 events_per_symbol: Dict[str, queue.Queue], signal_file: str,
+                 stop_loss_pips=None, take_profit_pips=None):
+
         self.bars = bars
-        self.symbol_list = self.bars.symbol_list
-        self.events = events
         self.portfolio = portfolio
+        self.symbol_list = self.bars.get_symbol_list()
+        self.events = events
+        self.events_per_symbol = events_per_symbol
         self.stop_loss_pips = stop_loss_pips
         self.take_profit_pips = take_profit_pips
         self.signal_file = signal_file
@@ -107,7 +110,6 @@ class DebugTradingStrategy(Strategy):
         if current_position is not None and (
                 (current_position.is_long() and short_signal) or
                 (current_position.is_short() and long_signal) or exit_signal):
-
             sig_dir = 'EXIT'
 
             signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())

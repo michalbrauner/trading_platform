@@ -5,6 +5,14 @@ import numpy as np
 import argparser_tools.basic
 from events.signal_event import SignalEvent
 from strategies.strategy import Strategy
+from typing import Dict
+from datahandlers.data_handler import DataHandler
+from core.portfolio import Portfolio
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class MovingAverageCrossStrategy(Strategy):
@@ -13,8 +21,11 @@ class MovingAverageCrossStrategy(Strategy):
     short/long simple weighted moving average. Default short/long
     windows are 100/400 periods respectively.
     """
+
     def __init__(
-            self, bars, portfolio, events, short_window=3, long_window=45, stop_loss_pips=None, take_profit_pips=None
+            self, bars: DataHandler, portfolio: Portfolio, events: queue, events_per_symbol: Dict[str, queue.Queue],
+            short_window: int = 3, long_window: int = 45,
+            stop_loss_pips=None, take_profit_pips=None
     ):
         """
         Initialises the Moving Average Cross Strategy.
@@ -28,8 +39,9 @@ class MovingAverageCrossStrategy(Strategy):
         take_profit_pips
         """
         self.bars = bars
-        self.symbol_list = self.bars.symbol_list
+        self.symbol_list = self.bars.get_symbol_list()
         self.events = events
+        self.events_per_symbol = events_per_symbol
         self.portfolio = portfolio
         self.short_window = short_window
         self.long_window = long_window

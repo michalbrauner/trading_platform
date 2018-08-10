@@ -8,6 +8,7 @@ from events.event import Event
 import argparse
 import urllib.request
 import json
+from typing import Dict
 
 try:
     import Queue as queue
@@ -16,10 +17,12 @@ except ImportError:
 
 
 class PinBarNotificationsStrategy(Strategy):
-    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue, send_notifications: bool):
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue,
+                 events_per_symbol: Dict[str, queue.Queue], send_notifications: bool):
         self.bars = bars
-        self.events = events
         self.portfolio = portfolio
+        self.events = events
+        self.events_per_symbol = events_per_symbol
         self.send_notifications = send_notifications
 
         # Set to True if a symbol is in the market
