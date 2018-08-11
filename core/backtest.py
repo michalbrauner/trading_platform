@@ -17,18 +17,10 @@ except ImportError:
 
 import time
 import datetime
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+from core.worker import Worker
 
 
-class Backtest(object):
-    """
-    Enscapsulates the settings and components for carrying out
-    an event-driven backtest.
-    """
-
-    LOG_TYPE_EVENTS = 'events'
-
+class Backtest(Worker):
     def __init__(
             self, output_directory, symbol_list, initial_capital,
             heartbeat, start_date, configuration, data_handler_factory,
@@ -82,29 +74,6 @@ class Backtest(object):
                                                                                      self.events_per_symbol,
                                                                                      self.logger)
 
-    async def _run(self):
-        if self.logger is not None:
-            self.logger.open()
-
-        loop = asyncio.get_event_loop()
-
-        futures = []
-
-        executor = ThreadPoolExecutor(max_workers=len(self.symbol_list))
-
-        for symbol in self.symbol_list:
-            futures.append(loop.run_in_executor(executor, self._run_symbol, symbol))
-
-        done, futures = await asyncio.wait(futures, loop=loop, return_when=asyncio.FIRST_COMPLETED)
-        for f in done:
-            await f
-
-        print('')
-        sys.stdout.flush()
-
-        if self.logger is not None:
-            self.logger.close()
-
     def _run_symbol(self, symbol: str):
         self.write_progress(0)
 
@@ -147,42 +116,28 @@ class Backtest(object):
 
             time.sleep(self.heartbeat)
 
-    def log_message(self, iteration, message):
-        if self.logger is not None and message != '':
-            self.logger.write('#%d - %s' % (iteration, message))
-
-    def log_event(self, iteration, event):
-        if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
-            if event is not None:
-                log = event.get_as_string()
-            else:
-                log = 'Event: None'
-
-            self.log_message(iteration, log)
-
     def write_progress(self, iteration: int):
         progress = int(round(self.data_handler.get_position_in_percentage(), 0))
         print('Running backtest ({}%)'.format(progress), end='\r')
         sys.stdout.flush()
 
-    def _save_equity_and_generate_stats(self):
-        print('Starting to generate equity')
-        sys.stdout.flush()
+    def get_signals(self) -> int:
+        return self.signals
 
-        self.portfolio.create_equity_curve_dataframe()
-        self.stats = self.portfolio.output_summary_stats()
+    def get_fills(self) -> int:
+        return self.fills
 
-    def print_performance(self):
-        self.stats.print_stats()
+    def get_orders(self) -> int:
+        return self.orders
 
-        print("Signals: %s" % self.signals)
-        print("Orders: %s" % self.orders)
-        print("Fills: %s" % self.fills)
+    def get_portfolio(self) -> Portfolio:
+        return self.portfolio
 
-    def run(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    def get_logger(self) -> Logger:
+        return self.logger
 
-        loop.run_until_complete(self._run())
+    def get_enabled_log_types(self) -> list:
+        return self.enabled_log_types
 
-        self._save_equity_and_generate_stats()
+    def get_symbol_list(self) -> list:
+        return self.symbol_list

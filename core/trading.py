@@ -1,5 +1,4 @@
 from __future__ import print_function
-import sys
 import datetime
 from datahandlers.data_handler_factory import DataHandlerFactory
 from core.configuration import Configuration
@@ -10,9 +9,8 @@ from oanda.symbol_name_converter import SymbolNameConverter
 from typing import Type
 from core.portfolio import Portfolio
 from strategies.strategy import Strategy
-import asyncio
 import os
-from concurrent.futures import ThreadPoolExecutor
+from core.worker import Worker
 
 try:
     import Queue as queue
@@ -22,9 +20,7 @@ except ImportError:
 import time
 
 
-class Trading(object):
-    LOG_TYPE_EVENTS = 'events'
-
+class Trading(Worker):
     def __init__(self, output_directory: str, symbol_list: list, heartbeat: int, configuration: Configuration,
                  data_handler_factory: DataHandlerFactory, execution_handler_factory: ExecutionHandlerFactory,
                  portfolio_class: Type[Portfolio], strategy_class: Type[Strategy], position_size_handler: PositionSizeHandler,
@@ -121,51 +117,6 @@ class Trading(object):
 
             time.sleep(self.heartbeat)
 
-    async def _run(self):
-        if self.logger is not None:
-            self.logger.open()
-
-        print('Trading started at {}'.format(datetime.datetime.now()))
-        print('Timeframe: {}'.format(self.configuration.get_option(Configuration.OPTION_TIMEFRAME)))
-        print('')
-
-        sys.stdout.flush()
-
-        loop = asyncio.get_event_loop()
-
-        futures = []
-
-        executor = ThreadPoolExecutor(max_workers=len(self.symbol_list))
-
-        for symbol in self.symbol_list:
-            futures.append(loop.run_in_executor(executor, self._run_symbol, symbol))
-
-        done, futures = await asyncio.wait(futures, loop=loop, return_when=asyncio.FIRST_COMPLETED)
-        for f in done:
-            await f
-
-        print('')
-        sys.stdout.flush()
-
-        if self.logger is not None:
-            self.logger.close()
-
-        if self.output_summary_file is not None:
-            self.output_summary_file.close()
-
-    def log_message(self, iteration, message):
-        if self.logger is not None and message != '':
-            self.logger.write('#%d - %s' % (iteration, message))
-
-    def log_event(self, iteration, event):
-        if self.logger is not None and self.LOG_TYPE_EVENTS in self.enabled_log_types:
-            if event is not None:
-                log = event.get_as_string()
-            else:
-                log = 'Event: None'
-
-            self.log_message(iteration, log)
-
     def write_progress(self, iteration: int):
         number_of_bars_for_symbols = []
 
@@ -189,21 +140,24 @@ class Trading(object):
 
         self.output_summary_file.flush()
 
-    def _save_equity_and_generate_stats(self):
-        self.portfolio.create_equity_curve_dataframe()
-        self.stats = self.portfolio.output_summary_stats()
+    def get_signals(self) -> int:
+        return self.signals
 
-    def print_performance(self):
-        self.stats.print_stats()
+    def get_fills(self) -> int:
+        return self.fills
 
-        print("Signals: %s" % self.signals)
-        print("Orders: %s" % self.orders)
-        print("Fills: %s" % self.fills)
+    def get_orders(self) -> int:
+        return self.orders
 
-    def run(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    def get_portfolio(self) -> Portfolio:
+        return self.portfolio
 
-        loop.run_until_complete(self._run())
+    def get_logger(self) -> Logger:
+        return self.logger
 
-        self._save_equity_and_generate_stats()
+    def get_enabled_log_types(self) -> list:
+        return self.enabled_log_types
+
+    def get_symbol_list(self) -> list:
+        return self.symbol_list
+
