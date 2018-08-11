@@ -4,37 +4,29 @@ from executionhandlers.execution_handler import ExecutionHandler
 from events.order_event import OrderEvent
 from events.fill_event import FillEvent
 from events.close_pending_orders_event import ClosePendingOrdersEvent
+from datahandlers.data_handler import DataHandler
 import copy
+from typing import Dict
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class SimulatedExecutionHandler(ExecutionHandler):
-    """
-    The simulated execution handler simply converts all order
-    objects into their equivalent fill objects automatically
-    without latency, slippage or fill-ratio issues.
-    This allows a straightforward "first go" test of any strategy,
-    before implementation with a more sophisticated execution
-    handler.
-    """
-
-    def __init__(self, bars, events):
-        """
-        Initialises the handler, setting the event queues
-        up internally.
-        Parameters:
-        bars
-        events - The Queue of Event objects.
-        """
+    def __init__(self, bars: DataHandler, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue]):
         self.bars = bars
         self.events = events
+        self.events_per_symbol = events_per_symbol
         self.limit_and_stop_orders = list()
         self.next_trade_id = 1000
 
     def create_next_trade_id(self):
-        id = self.next_trade_id
+        trade_id = self.next_trade_id
         self.next_trade_id = self.next_trade_id + 1
 
-        return id
+        return trade_id
 
     def execute_order(self, event):
         """
@@ -55,6 +47,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
                     trade_id
                 )
                 self.events.put(fill_event)
+                self.events_per_symbol[event.symbol].put(fill_event)
 
                 reversed_direction = self.get_reversed_direction(event.direction)
 
@@ -89,9 +82,11 @@ class SimulatedExecutionHandler(ExecutionHandler):
             if should_be_filled:
                 new_order = self.make_pending_order_market(order, note)
                 self.events.put(new_order)
+                self.events_per_symbol[new_order.symbol].put(new_order)
 
                 close_pending_orders_event = ClosePendingOrdersEvent(order.symbol)
                 self.events.put(close_pending_orders_event)
+                self.events_per_symbol[close_pending_orders_event.symbol].put(close_pending_orders_event)
 
     def stop_order_should_be_filled(self, order, price_ask, price_bid):
         return (order.direction == 'BUY' and price_ask >= order.price) or \
@@ -105,7 +100,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.limit_and_stop_orders = list(filter(lambda order_item: order_item.symbol != close_pending_orders_event.symbol,
                                             self.limit_and_stop_orders))
 
-    def make_pending_order_market(self, order, note):
+    def make_pending_order_market(self, order: OrderEvent, note) -> OrderEvent:
         new_order = copy.copy(order)
         new_order.order_type = 'MKT'
         new_order.price = None

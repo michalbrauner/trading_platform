@@ -73,9 +73,9 @@ class DebugTradingStrategy(Strategy):
                 if signal_generated is False:
                     self.calculate_new_signals(short_signal, long_signal, symbol, bar_date, bar_price, dt)
 
-    def calculate_new_signals(self, short_signal, long_signal, s, bar_date, bar_price, dt):
+    def calculate_new_signals(self, short_signal, long_signal, symbol, bar_date, bar_price, dt):
 
-        current_position = self.portfolio.get_current_position(s)
+        current_position = self.portfolio.get_current_position(symbol)
 
         if long_signal and current_position is None:
             sig_dir = 'LONG'
@@ -83,9 +83,10 @@ class DebugTradingStrategy(Strategy):
             stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, sig_dir)
             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
-            signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
+            signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
             self.events.put(signal)
-            self.bought[s] = sig_dir
+            self.events_per_symbol[symbol].put(signal)
+            self.bought[symbol] = sig_dir
 
             return True
 
@@ -95,26 +96,29 @@ class DebugTradingStrategy(Strategy):
             stop_loss = self.calculate_stop_loss_price(bar_price, self.stop_loss_pips, sig_dir)
             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
-            signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
+            signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
             self.events.put(signal)
-            self.bought[s] = sig_dir
+            self.events_per_symbol[symbol].put(signal)
+            self.bought[symbol] = sig_dir
 
             return True
 
         return False
 
-    def calculate_exit_signals(self, short_signal, long_signal, exit_signal, s, bar_date, dt):
+    def calculate_exit_signals(self, short_signal, long_signal, exit_signal, symbol, bar_date, dt):
 
-        current_position = self.portfolio.get_current_position(s)
+        current_position = self.portfolio.get_current_position(symbol)
 
         if current_position is not None and (
                 (current_position.is_long() and short_signal) or
                 (current_position.is_short() and long_signal) or exit_signal):
             sig_dir = 'EXIT'
 
-            signal = SignalEvent(1, s, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
+            signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
             self.events.put(signal)
-            self.bought[s] = 'OUT'
+            self.events_per_symbol[symbol].put(signal)
+
+            self.bought[symbol] = 'OUT'
 
             return True
 

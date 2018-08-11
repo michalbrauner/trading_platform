@@ -82,7 +82,9 @@ class Backtest(object):
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
                                                                                      self.data_handler,
-                                                                                     self.events, self.logger)
+                                                                                     self.events,
+                                                                                     self.events_per_symbol,
+                                                                                     self.logger)
 
     def _run_backtest(self):
         if self.logger is not None:

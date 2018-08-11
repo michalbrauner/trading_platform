@@ -78,8 +78,9 @@ class Trading(object):
                                             **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
-                                                                                     self.data_handler,
-                                                                                     self.events, self.logger)
+                                                                                     self.data_handler, self.events,
+                                                                                     self.events_per_symbol,
+                                                                                     self.logger)
 
     async def _run(self):
         if self.logger is not None:

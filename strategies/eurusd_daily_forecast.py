@@ -237,6 +237,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
                 signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
                 self.events.put(signal)
+                self.events_per_symbol[symbol].put(signal)
 
                 return True
 
@@ -250,6 +251,7 @@ class EurUsdDailyForecastStrategy(Strategy):
 
                 signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
                 self.events.put(signal)
+                self.events_per_symbol[symbol].put(signal)
 
                 return True
 
@@ -264,6 +266,7 @@ class EurUsdDailyForecastStrategy(Strategy):
             signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0, None, None,
                                  current_position.get_trade_id())
             self.events.put(signal)
+            self.events_per_symbol[symbol].put(signal)
 
             self.bought[symbol] = 'OUT'
 
