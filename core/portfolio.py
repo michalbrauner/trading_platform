@@ -31,7 +31,7 @@ class Portfolio(object):
     portfolio total across bars.
     """
 
-    def __init__(self, bars, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], start_date,
+    def __init__(self, bars, events_per_symbol: Dict[str, queue.Queue], start_date,
                  initial_capital, output_directory, equity_filename, trades_filename,
                  position_size_handler):
         """
@@ -46,7 +46,6 @@ class Portfolio(object):
         position_size_handler - Calculate position size for new order
         """
         self.bars = bars
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.symbol_list = self.bars.symbol_list
         self.start_date = start_date
@@ -103,7 +102,7 @@ class Portfolio(object):
 
         return d
 
-    def update_timeindex(self, event):
+    def update_timeindex(self):
         """
         Adds a new record to the positions matrix for the current
         market data bar. This reflects the PREVIOUS bar, i.e. all
@@ -288,13 +287,11 @@ class Portfolio(object):
             order_event = self.generate_naive_order(event)
 
             if order_event is not None:
-                self.events.put(order_event)
-                self.events_per_symbol[event.symbol].put(order_event)
+                self.events_per_symbol[order_event.symbol].put(order_event)
 
             if event.signal_type == 'EXIT':
                 close_pending_orders_event = ClosePendingOrdersEvent(event.symbol)
-                self.events.put(close_pending_orders_event)
-                self.events_per_symbol[event.symbol].put(close_pending_orders_event)
+                self.events_per_symbol[close_pending_orders_event.symbol].put(close_pending_orders_event)
 
     def create_equity_curve_dataframe(self):
         """

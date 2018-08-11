@@ -17,11 +17,10 @@ except ImportError:
 
 
 class PinBarNotificationsStrategy(Strategy):
-    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue,
-                 events_per_symbol: Dict[str, queue.Queue], send_notifications: bool):
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events_per_symbol: Dict[str, queue.Queue],
+                 send_notifications: bool):
         self.bars = bars
         self.portfolio = portfolio
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.send_notifications = send_notifications
 

@@ -15,9 +15,8 @@ except ImportError:
 
 
 class SimulatedExecutionHandler(ExecutionHandler):
-    def __init__(self, bars: DataHandler, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue]):
+    def __init__(self, bars: DataHandler, events_per_symbol: Dict[str, queue.Queue]):
         self.bars = bars
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.limit_and_stop_orders = list()
         self.next_trade_id = 1000
@@ -46,7 +45,6 @@ class SimulatedExecutionHandler(ExecutionHandler):
                     datetime.datetime.utcnow(), event.symbol, 'FOREX', event.quantity, event.direction, None, None,
                     trade_id
                 )
-                self.events.put(fill_event)
                 self.events_per_symbol[event.symbol].put(fill_event)
 
                 reversed_direction = self.get_reversed_direction(event.direction)
@@ -81,11 +79,9 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
             if should_be_filled:
                 new_order = self.make_pending_order_market(order, note)
-                self.events.put(new_order)
                 self.events_per_symbol[new_order.symbol].put(new_order)
 
                 close_pending_orders_event = ClosePendingOrdersEvent(order.symbol)
-                self.events.put(close_pending_orders_event)
                 self.events_per_symbol[close_pending_orders_event.symbol].put(close_pending_orders_event)
 
     def stop_order_should_be_filled(self, order, price_ask, price_bid):

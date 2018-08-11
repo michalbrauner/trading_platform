@@ -16,10 +16,9 @@ except ImportError:
 
 
 class OandaExecutionHandler(ExecutionHandler):
-    def __init__(self, bars: DataHandler, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue],
+    def __init__(self, bars: DataHandler, events_per_symbol: Dict[str, queue.Queue],
                  account_id: str, access_token: str, logger: Logger):
         self.bars = bars
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.access_token = access_token
         self.account_id = account_id
@@ -58,7 +57,6 @@ class OandaExecutionHandler(ExecutionHandler):
                             None, 0
                         )
 
-                        self.events.put(fill_event)
                         self.events_per_symbol[fill_event.symbol].put(fill_event)
 
                     self.logger.write(
@@ -89,7 +87,6 @@ class OandaExecutionHandler(ExecutionHandler):
                         'Executed the order with stopLoss=%10.5f, takeProfit=%10.5f' % (
                             stop_loss, take_profit))
 
-                    self.events.put(fill_event)
                     self.events_per_symbol[fill_event.symbol].put(fill_event)
 
     def update_stop_and_limit_orders(self, market_event):

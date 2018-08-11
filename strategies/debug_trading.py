@@ -15,14 +15,12 @@ except ImportError:
 
 
 class DebugTradingStrategy(Strategy):
-    def __init__(self, bars: DataHandler, portfolio: Portfolio, events: queue,
-                 events_per_symbol: Dict[str, queue.Queue], signal_file: str,
-                 stop_loss_pips=None, take_profit_pips=None):
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events_per_symbol: Dict[str, queue.Queue],
+                 signal_file: str, stop_loss_pips=None, take_profit_pips=None):
 
         self.bars = bars
         self.portfolio = portfolio
         self.symbol_list = self.bars.get_symbol_list()
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.stop_loss_pips = stop_loss_pips
         self.take_profit_pips = take_profit_pips
@@ -84,7 +82,6 @@ class DebugTradingStrategy(Strategy):
             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
-            self.events.put(signal)
             self.events_per_symbol[symbol].put(signal)
             self.bought[symbol] = sig_dir
 
@@ -97,7 +94,6 @@ class DebugTradingStrategy(Strategy):
             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
-            self.events.put(signal)
             self.events_per_symbol[symbol].put(signal)
             self.bought[symbol] = sig_dir
 
@@ -115,7 +111,6 @@ class DebugTradingStrategy(Strategy):
             sig_dir = 'EXIT'
 
             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, None, None, current_position.get_trade_id())
-            self.events.put(signal)
             self.events_per_symbol[symbol].put(signal)
 
             self.bought[symbol] = 'OUT'

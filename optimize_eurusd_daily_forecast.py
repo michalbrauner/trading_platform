@@ -131,7 +131,7 @@ def run_backtest_instance(args_namespace, events_log_file, heartbeat, sl, tp, sh
         equity_filename,
         trades_filename
     )
-    backtest.simulate_trading()
+    backtest.run()
 
     return backtest.stats
 

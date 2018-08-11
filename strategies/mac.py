@@ -23,7 +23,7 @@ class MovingAverageCrossStrategy(Strategy):
     """
 
     def __init__(
-            self, bars: DataHandler, portfolio: Portfolio, events: queue, events_per_symbol: Dict[str, queue.Queue],
+            self, bars: DataHandler, portfolio: Portfolio, events_per_symbol: Dict[str, queue.Queue],
             short_window: int = 3, long_window: int = 45,
             stop_loss_pips=None, take_profit_pips=None
     ):
@@ -40,7 +40,6 @@ class MovingAverageCrossStrategy(Strategy):
         """
         self.bars = bars
         self.symbol_list = self.bars.get_symbol_list()
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.portfolio = portfolio
         self.short_window = short_window
@@ -96,7 +95,6 @@ class MovingAverageCrossStrategy(Strategy):
                             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
                             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
-                            self.events.put(signal)
                             self.events_per_symbol[symbol].put(signal)
 
                             self.bought[s] = sig_dir
@@ -108,7 +106,6 @@ class MovingAverageCrossStrategy(Strategy):
                             take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, sig_dir)
 
                             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0, stop_loss, take_profit)
-                            self.events.put(signal)
                             self.events_per_symbol[symbol].put(signal)
 
                             self.bought[s] = sig_dir
@@ -117,7 +114,6 @@ class MovingAverageCrossStrategy(Strategy):
                             sig_dir = 'EXIT'
 
                             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
-                            self.events.put(signal)
                             self.events_per_symbol[symbol].put(signal)
                             self.bought[s] = 'OUT'
 
@@ -125,7 +121,6 @@ class MovingAverageCrossStrategy(Strategy):
                             sig_dir = 'EXIT'
 
                             signal = SignalEvent(1, symbol, bar_date, dt, sig_dir, 1.0)
-                            self.events.put(signal)
                             self.events_per_symbol[symbol].put(signal)
                             self.bought[s] = 'OUT'
 

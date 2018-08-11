@@ -22,7 +22,7 @@ class HistoricCSVDataHandler(DataHandler):
     trading interface.
     """
 
-    def __init__(self, events: queue.Queue, events_per_symbol: Dict[str, queue.Queue], csv_dir: str,
+    def __init__(self, events_per_symbol: Dict[str, queue.Queue], csv_dir: str,
                  symbol_list: List[str]) -> None:
         """
         Initialises the historic data handler by requesting
@@ -31,7 +31,6 @@ class HistoricCSVDataHandler(DataHandler):
         It will be assumed that all files are of the form
         'symbol.csv', where symbol is a string in the list.
         """
-        self.events = events
         self.events_per_symbol = events_per_symbol
         self.csv_dir = csv_dir
         self.symbol_list = symbol_list
@@ -172,7 +171,6 @@ class HistoricCSVDataHandler(DataHandler):
         else:
             if bar is not None:
                 self.latest_symbol_data[symbol].append(bar)
-                self.events.put(MarketEvent(symbol))
                 self.events_per_symbol[symbol].put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):

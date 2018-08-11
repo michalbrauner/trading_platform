@@ -49,7 +49,6 @@ class Trading(object):
         self.start_date = datetime.datetime.now()
         self.initial_capital = 0
 
-        self.events = queue.Queue()
         self.events_per_symbol = dict(((symbol, queue.Queue()) for (symbol) in self.symbol_list))
 
         self.signals = 0
@@ -65,22 +64,62 @@ class Trading(object):
 
     def _generate_trading_instances(self):
 
-        self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events,
-                                                                           self.events_per_symbol,
+        self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events_per_symbol,
                                                                            self.symbol_list)
 
-        self.portfolio = self.portfolio_class(self.data_handler, self.events, self.events_per_symbol, self.start_date,
-                                              self.initial_capital,
-                                              self.output_directory, self.equity_filename, self.trades_filename,
-                                              self.position_size_handler)
+        self.portfolio = self.portfolio_class(self.data_handler, self.events_per_symbol, self.start_date,
+                                              self.initial_capital, self.output_directory, self.equity_filename,
+                                              self.trades_filename, self.position_size_handler)
 
-        self.strategy = self.strategy_class(self.data_handler, self.portfolio, self.events, self.events_per_symbol,
+        self.strategy = self.strategy_class(self.data_handler, self.portfolio, self.events_per_symbol,
                                             **self.strategy_params_dict)
 
         self.execution_handler = self.execution_handler_factory.create_from_settings(self.configuration,
-                                                                                     self.data_handler, self.events,
+                                                                                     self.data_handler,
                                                                                      self.events_per_symbol,
                                                                                      self.logger)
+
+    def _run_symbol(self, symbol: str):
+        self.write_progress(0)
+
+        i = 0
+        while True:
+            i += 1
+            self.write_progress(i)
+
+            # Update the market bars
+            if self.data_handler.backtest_should_continue():
+                self.data_handler.update_bars(symbol)
+            else:
+                break
+
+            # Handle the events
+            while True:
+                try:
+                    event = self.events_per_symbol[symbol].get(False)
+                except queue.Empty:
+                    break
+                else:
+                    if event is not None:
+                        if event.type == 'CLOSE_PENDING_ORDERS':
+                            self.execution_handler.clear_limit_or_stop_orders(event)
+                        elif event.type == 'MARKET':
+                            self.strategy.calculate_signals(event)
+                            self.execution_handler.update_stop_and_limit_orders(event)
+                            self.portfolio.update_timeindex()
+                        elif event.type == 'SIGNAL':
+                            self.signals += 1
+                            self.portfolio.update_signal(event)
+                        elif event.type == 'ORDER':
+                            self.orders += 1
+                            self.execution_handler.execute_order(event)
+                        elif event.type == 'FILL':
+                            self.fills += 1
+                            self.portfolio.update_fill(event)
+
+                    self.log_event(i, event)
+
+            time.sleep(self.heartbeat)
 
     async def _run(self):
         if self.logger is not None:
@@ -113,48 +152,6 @@ class Trading(object):
 
         if self.output_summary_file is not None:
             self.output_summary_file.close()
-
-    def _run_symbol(self, symbol: str):
-        self.write_progress(0)
-
-        i = 0
-        while True:
-            i += 1
-            self.write_progress(i)
-
-            # Update the market bars
-            if self.data_handler.backtest_should_continue():
-                self.data_handler.update_bars(symbol)
-            else:
-                break
-
-            # Handle the events
-            while True:
-                try:
-                    event = self.events.get(False)
-                except queue.Empty:
-                    break
-                else:
-                    if event is not None:
-                        if event.type == 'CLOSE_PENDING_ORDERS':
-                            self.execution_handler.clear_limit_or_stop_orders(event)
-                        elif event.type == 'MARKET':
-                            self.strategy.calculate_signals(event)
-                            self.execution_handler.update_stop_and_limit_orders(event)
-                            self.portfolio.update_timeindex(event)
-                        elif event.type == 'SIGNAL':
-                            self.signals += 1
-                            self.portfolio.update_signal(event)
-                        elif event.type == 'ORDER':
-                            self.orders += 1
-                            self.execution_handler.execute_order(event)
-                        elif event.type == 'FILL':
-                            self.fills += 1
-                            self.portfolio.update_fill(event)
-
-                    self.log_event(i, event)
-
-            time.sleep(self.heartbeat)
 
     def log_message(self, iteration, message):
         if self.logger is not None and message != '':

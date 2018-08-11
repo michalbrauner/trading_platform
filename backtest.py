@@ -49,7 +49,7 @@ def main():
         'trades.csv',
     )
 
-    backtest.simulate_trading()
+    backtest.run()
     backtest.print_performance()
 
 

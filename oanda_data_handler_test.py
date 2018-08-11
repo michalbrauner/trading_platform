@@ -11,13 +11,12 @@ def main():
     account_id = os.environ.get('OANDA_API_ACCOUNT_ID')
     access_token = os.environ.get('OANDA_API_ACCESS_TOKEN')
 
-    events = queue.Queue()
     events_per_symbol = {'EUR_USD': queue.Queue()}
 
     symbols = ['EUR_USD']
 
     data_handler_factory = DataHandlerFactory()
-    data_handler = data_handler_factory.create_oanda_data_handler(events, events_per_symbol, symbols, account_id,
+    data_handler = data_handler_factory.create_oanda_data_handler(events_per_symbol, symbols, account_id,
                                                                   access_token)
 
     while True:
