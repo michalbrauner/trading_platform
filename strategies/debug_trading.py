@@ -46,30 +46,31 @@ class DebugTradingStrategy(Strategy):
 
     def calculate_signals(self, event):
         if event.type == 'MARKET':
-            for symbol in self.bars.get_symbol_list():
-                if not self.bars.has_some_bars(symbol):
-                    continue
+            symbol = event.symbol
 
-                if self.portfolio.current_positions[symbol] == 0:
-                    self.bought[symbol] = 'OUT'
+            if not self.bars.has_some_bars(symbol):
+                return
 
-                bar_date = self.bars.get_latest_bar_datetime(symbol)
-                bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
+            if self.portfolio.current_positions[symbol] == 0:
+                self.bought[symbol] = 'OUT'
 
-                dt = datetime.datetime.utcnow()
+            bar_date = self.bars.get_latest_bar_datetime(symbol)
+            bar_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
 
-                self.signal_file_opened.seek(0, 0)
-                signal_from_file = self.signal_file_opened.readline()
+            dt = datetime.datetime.utcnow()
 
-                long_signal = signal_from_file == 'long'
-                short_signal = signal_from_file == 'short'
-                exit_signal = signal_from_file == 'exit'
+            self.signal_file_opened.seek(0, 0)
+            signal_from_file = self.signal_file_opened.readline()
 
-                signal_generated = self.calculate_exit_signals(short_signal, long_signal, exit_signal, symbol, bar_date,
-                                                               dt)
+            long_signal = signal_from_file == 'long'
+            short_signal = signal_from_file == 'short'
+            exit_signal = signal_from_file == 'exit'
 
-                if signal_generated is False:
-                    self.calculate_new_signals(short_signal, long_signal, symbol, bar_date, bar_price, dt)
+            signal_generated = self.calculate_exit_signals(short_signal, long_signal, exit_signal, symbol, bar_date,
+                                                           dt)
+
+            if signal_generated is False:
+                self.calculate_new_signals(short_signal, long_signal, symbol, bar_date, bar_price, dt)
 
     def calculate_new_signals(self, short_signal, long_signal, symbol, bar_date, bar_price, dt):
 
