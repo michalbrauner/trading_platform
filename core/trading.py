@@ -83,6 +83,8 @@ class Trading(Worker):
             i += 1
             self.write_progress(i)
 
+            self.log_message(i, '')
+
             # Update the market bars
             if self.data_handler.backtest_should_continue():
                 self.data_handler.update_bars(symbol)
