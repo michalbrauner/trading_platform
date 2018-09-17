@@ -5,9 +5,6 @@ from core.portfolio import Portfolio
 from loggers.logger import Logger
 from concurrent.futures import ThreadPoolExecutor
 from datahandlers.data_handler import DataHandler
-from memory_debug import display_top
-import tracemalloc
-
 
 class Worker(object):
 
@@ -52,9 +49,6 @@ class Worker(object):
         raise NotImplementedError("Should implement _run_symbol()")
 
     async def _run(self):
-
-        tracemalloc.start()
-
         if self.get_logger() is not None:
             self.get_logger().open()
 
@@ -82,10 +76,6 @@ class Worker(object):
     def log_message(self, iteration, message):
         if self.get_logger() is not None and message != '':
             self.get_logger().write('#%d - %s' % (iteration, message))
-
-        snapshot = tracemalloc.take_snapshot()
-        memory_usage = display_top(snapshot)
-        self.get_logger().write(memory_usage)
 
     def log_event(self, iteration, event):
         if self.get_logger() is not None and self.LOG_TYPE_EVENTS in self.get_enabled_log_types():
