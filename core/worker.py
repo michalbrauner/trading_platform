@@ -63,7 +63,7 @@ class Worker(object):
         for symbol in symbol_list:
             futures.append(loop.run_in_executor(executor, self._run_symbol, symbol))
 
-        done, futures = await asyncio.wait(futures, loop=loop, return_when=asyncio.FIRST_COMPLETED)
+        done, futures = await asyncio.wait(futures, loop=loop, return_when=asyncio.ALL_COMPLETED)
         for f in done:
             await f
 

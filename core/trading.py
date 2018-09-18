@@ -117,6 +117,8 @@ class Trading(Worker):
 
             time.sleep(self.heartbeat)
 
+        self.log_message(i, 'Stopping processing pair {}'.format(symbol))
+
     def write_progress(self, iteration: int):
         number_of_bars_for_symbols = []
 
