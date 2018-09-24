@@ -27,7 +27,17 @@ class OandaDataHandlerBarsProvider(object):
         return self.queues[symbol]
 
     def start_providing_bars(self):
-        self.stream.connect_to_stream()
+        if not self.stream.is_connected():
+            self.stream.connect_to_stream()
+
+        if self.stream.response.status_code != 200:
+            for symbol in self.queues:
+                self.queues[symbol].put_nowait({
+                    'action': 'exit',
+                    'message': 'Stream not connected'
+                })
+
+            return
 
         for price in self.stream.get_price():
             symbol = price['instrument']

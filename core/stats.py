@@ -22,8 +22,11 @@ class Stats(object):
         return len(self.trades)
 
     def print_stats(self):
-        print('Total Return: %0.2f%%' % self.get_total_return())
-        print('Sharpe Ratio: %0.2f' % self.get_sharpe_ratio())
-        print('Max Drawdown: %0.2f%%' % self.get_max_drawdown())
-        print('Drawdown Duration: %d' % self.get_drawdown_duration())
-        print('Number of trades: %d' % self.get_number_of_trades())
+        if len(self.trades) > 0:
+            print('Total Return: %0.2f%%' % self.get_total_return())
+            print('Sharpe Ratio: %0.2f' % self.get_sharpe_ratio())
+            print('Max Drawdown: %0.2f%%' % self.get_max_drawdown())
+            print('Drawdown Duration: %d' % self.get_drawdown_duration())
+            print('Number of trades: %d' % self.get_number_of_trades())
+        else:
+            print('No trades executed to print statistics')

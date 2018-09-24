@@ -87,6 +87,11 @@ class Trading(Worker):
             if self.data_handler.backtest_should_continue():
                 self.data_handler.update_bars(symbol)
             else:
+                error_message = self.data_handler.get_error_message()
+
+                if self.get_logger() is not None and error_message is not None:
+                    self.get_logger().write(error_message)
+
                 break
 
             # Handle the events

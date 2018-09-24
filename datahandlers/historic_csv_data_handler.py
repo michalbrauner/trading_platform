@@ -7,6 +7,7 @@ from events.market_event import MarketEvent
 from datahandlers.data_handler import DataHandler
 from typing import Dict
 from typing import List
+from typing import Optional
 
 try:
     import Queue as queue
@@ -180,6 +181,9 @@ class HistoricCSVDataHandler(DataHandler):
             positions_in_percentage.append(self.get_position_in_percentage_for_symbol(s))
 
         return np.round(np.mean(positions_in_percentage), 2)
+
+    def get_error_message(self) -> Optional[str]:
+        return ''
 
     def get_position_in_percentage_for_symbol(self, symbol):
         position = float(self.symbol_position_info[symbol]['position'])

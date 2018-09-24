@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from typing import Optional
 
 
 class DataHandler(object):
@@ -78,6 +79,10 @@ class DataHandler(object):
     @abstractmethod
     def get_position_in_percentage(self):
         raise NotImplementedError("Should implement get_position_in_percentage()")
+
+    @abstractmethod
+    def get_error_message(self) -> Optional[str]:
+        raise NotImplementedError("Should implement get_error_message()")
 
     @abstractmethod
     def get_number_of_bars(self, symbol):

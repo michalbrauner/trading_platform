@@ -8,6 +8,7 @@ from oanda.instrument_api_client import InstrumentApiClient
 from datahandlers.oanda_data_handler_bars_provider import OandaDataHandlerBarsProvider
 import asyncio
 from typing import Dict
+from typing import Optional
 
 try:
     import Queue as queue
@@ -32,10 +33,13 @@ class OandaDataHandler(DataHandler):
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
+        self.error_message = None
         self.time_frame = time_frame
         self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
 
         self.instrument_api_client = instrument_api_client
+
+        self.providing_bars_loop = None
 
         if number_of_bars_preload_from_history > 0:
             for symbol in self.symbol_list:
@@ -44,9 +48,11 @@ class OandaDataHandler(DataHandler):
         self.stream = stream
         self.bars_provider = OandaDataHandlerBarsProvider(stream, symbol_list, TimeFrame(self.time_frame))
 
-        loop = asyncio.get_event_loop()
+    def start_providing_bars(self) -> None:
+        self.providing_bars_loop = asyncio.new_event_loop()
         executor = ThreadPoolExecutor(max_workers=1)
-        loop.run_in_executor(executor, self.bars_provider.start_providing_bars)
+
+        self.providing_bars_loop.run_in_executor(executor, self.bars_provider.start_providing_bars)
 
     def get_symbol_list(self) -> list:
         return self.symbol_list
@@ -69,10 +75,21 @@ class OandaDataHandler(DataHandler):
             self.append_new_price_data(symbol, bar_data)
 
     def _get_new_bar(self, symbol):
+
+        if self.providing_bars_loop is None:
+            self.start_providing_bars()
+
         symbol_data_queue = self.bars_provider.get_queue(symbol)
 
         while True:
-            yield symbol_data_queue.get(True)
+            symbol_data = symbol_data_queue.get(True)
+
+            if 'action' in symbol_data:
+                if symbol_data['action'] == 'exit':
+                    raise StopIteration(symbol_data['message'])
+            else:
+                yield symbol_data
+
 
     @staticmethod
     def get_price_datetime(datetime_as_string):
@@ -192,12 +209,16 @@ class OandaDataHandler(DataHandler):
         """
         try:
             bar = next(self._get_new_bar(symbol))
-        except StopIteration:
+        except StopIteration as e:
             self.continue_backtest = False
+            self.error_message = e.value
         else:
             if bar is not None:
                 self.append_new_price_data(symbol, bar)
                 self.events_per_symbol[symbol].put(MarketEvent(symbol))
+
+    def get_error_message(self) -> Optional[str]:
+        return self.error_message
 
     def get_position_in_percentage(self):
         return 0
