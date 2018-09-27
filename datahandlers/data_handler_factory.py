@@ -42,9 +42,12 @@ class DataHandlerFactory:
                                   account_id: str, access_token: str, time_frame: str,
                                   number_of_bars_preload_from_history: int) -> DataHandler:
         stream_factory = StreamFactory()
-        stream = stream_factory.create(account_id, access_token, symbol_list)
+        streams = []
+
+        for symbol in symbol_list:
+            streams.append(stream_factory.create(account_id, access_token, [symbol]))
 
         instrument_api_client = InstrumentApiClient(access_token)
 
-        return OandaDataHandler(events_per_symbol, symbol_list, stream, instrument_api_client, time_frame,
+        return OandaDataHandler(events_per_symbol, symbol_list, streams, instrument_api_client, time_frame,
                                 number_of_bars_preload_from_history)

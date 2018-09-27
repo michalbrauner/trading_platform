@@ -1,7 +1,7 @@
 import requests
 import json
 import threading
-import _thread
+from typing import List
 
 
 class Stream:
@@ -16,6 +16,9 @@ class Stream:
         self.response_iter_lines = None
         self.connected = False
         self.lock = threading.Lock()
+
+    def get_instruments(self) -> List[str]:
+        return self.instruments
 
     def connect_to_stream(self):
         if self.lock.acquire(True, 10):

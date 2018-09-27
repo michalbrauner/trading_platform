@@ -9,6 +9,7 @@ import argparse
 import urllib.request
 import json
 from typing import Dict
+from datetime import datetime
 
 try:
     import Queue as queue
@@ -49,6 +50,8 @@ class PinBarNotificationsStrategy(Strategy):
             price_high = self.bars.get_latest_bar_value(symbol, 'high_bid')
             price_low = self.bars.get_latest_bar_value(symbol, 'low_bid')
 
+            self.notify_about_pinbar(symbol, price_close, price_open, price_high, price_low, bar_date)
+
             size_of_bar = abs(price_high - price_low)
 
             if size_of_bar > 0:
@@ -63,13 +66,23 @@ class PinBarNotificationsStrategy(Strategy):
                 if body_to_bar_ratio <= .2:
                     if bigger_tail >= .7 and smaller_tail <= .2:
                         if self.send_notifications:
-                            self.notify_about_pinbar(symbol)
+                            self.notify_about_pinbar(symbol, price_close, price_open, price_high, price_low, bar_date)
 
-    def notify_about_pinbar(self, symbol: str) -> None:
+    def notify_about_pinbar(self, symbol: str, price_close: float, price_open: float, price_high: float,
+                            price_low: float, bar_date: datetime) -> None:
         opener = urllib.request.build_opener()
         opener.addheaders = [('Content-Type', 'application/json')]
 
-        data = json.dumps([{'symbol': symbol}])
+        data = json.dumps([
+            {
+                'symbol': symbol,
+                'price_close': price_close,
+                'price_open': price_open,
+                'price_high': price_high,
+                'price_low': price_low,
+                'bar_date': bar_date.strftime("%Y-%m-%d %H:%M:%S")
+            }
+        ])
         data = data.encode('ascii')
 
         with opener.open(self.webhook_to_call, data) as response:

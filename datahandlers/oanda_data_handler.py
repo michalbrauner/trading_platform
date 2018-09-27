@@ -8,6 +8,7 @@ from oanda.instrument_api_client import InstrumentApiClient
 from datahandlers.oanda_data_handler_bars_provider import OandaDataHandlerBarsProvider
 import asyncio
 from typing import Dict
+from typing import List
 from typing import Optional
 
 try:
@@ -21,7 +22,7 @@ from datahandlers.data_handler import DataHandler
 class OandaDataHandler(DataHandler):
 
     def __init__(self, events_per_symbol: Dict[str, queue.Queue], symbol_list: list,
-                 stream: OandaPriceStream,
+                 streams: List[OandaPriceStream],
                  instrument_api_client: InstrumentApiClient, time_frame: str,
                  number_of_bars_preload_from_history: int) -> None:
 
@@ -45,8 +46,8 @@ class OandaDataHandler(DataHandler):
             for symbol in self.symbol_list:
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
-        self.stream = stream
-        self.bars_provider = OandaDataHandlerBarsProvider(stream, symbol_list, TimeFrame(self.time_frame))
+        self.streams = streams
+        self.bars_provider = OandaDataHandlerBarsProvider(streams, symbol_list, TimeFrame(self.time_frame))
 
     def start_providing_bars(self) -> None:
         self.providing_bars_loop = asyncio.new_event_loop()
