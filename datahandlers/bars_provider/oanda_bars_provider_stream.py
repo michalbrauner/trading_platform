@@ -1,11 +1,10 @@
 from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
-from dateutil import parser
-from datetime import datetime
 import pandas as pd
 from typing import List
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from datahandlers.bars_provider.bars_provider import BarsProvider
 
 try:
     import Queue as queue
@@ -13,7 +12,7 @@ except ImportError:
     import queue
 
 
-class OandaDataHandlerBarsProvider(object):
+class OandaBarsProviderStream(BarsProvider):
 
     def __init__(self, streams: List[OandaPriceStream], symbols: list, time_frame: TimeFrame):
         self.streams = streams
@@ -29,10 +28,7 @@ class OandaDataHandlerBarsProvider(object):
     def get_queue(self, symbol: str) -> queue.Queue:
         return self.queues[symbol]
 
-    def start_providing_bars_for_symbol(self):
-        pass
-
-    def start_providing_bars(self):
+    def start_providing_bars(self) -> None:
         for stream in self.streams:
             if not stream.is_connected():
                 stream.connect_to_stream()
@@ -95,40 +91,17 @@ class OandaDataHandlerBarsProvider(object):
                 price_ask_high = float(self.opened_bars[symbol]['ask'].max())
                 price_ask_low = float(self.opened_bars[symbol]['ask'].min())
 
-                data = self.create_bar_data(self.opened_bars_starts_at[symbol], price_ask_close, price_ask_high, price_ask_low,
+                data = self.create_bar_data(self.opened_bars_starts_at[symbol], price_ask_close, price_ask_high,
+                                            price_ask_low,
                                             price_ask_open, price_bid_close, price_bid_high, price_bid_low,
                                             price_bid_open)
 
                 if prices_file is not None:
-                    prices_file.write('bar;{};{};{}\n'.format(symbol, self.opened_bars_starts_at[symbol], self.opened_bars_finishes_at[symbol]))
+                    prices_file.write('bar;{};{};{}\n'.format(symbol, self.opened_bars_starts_at[symbol],
+                                                              self.opened_bars_finishes_at[symbol]))
                     prices_file.flush()
 
                 self.opened_bars_finishes_at[symbol] = None
                 self.opened_bars_starts_at[symbol] = None
 
                 self.queues[symbol].put_nowait(data)
-
-
-    @staticmethod
-    def create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low, price_ask_open,
-                        price_bid_close, price_bid_high, price_bid_low, price_bid_open) -> dict:
-        return {
-            'datetime': opened_bar_starts_at,
-            'open_bid': float(price_bid_open),
-            'open_ask': float(price_ask_open),
-            'high_bid': float(price_bid_high),
-            'high_ask': float(price_ask_high),
-            'low_bid': float(price_bid_low),
-            'low_ask': float(price_ask_low),
-            'close_bid': float(price_bid_close),
-            'close_ask': float(price_ask_close),
-            'volume': 0
-        }
-
-    @staticmethod
-    def get_price_datetime(datetime_as_string: str) -> datetime:
-        price_datetime = parser.parse(datetime_as_string)
-        price_datetime = price_datetime.replace(tzinfo=None)
-        price_datetime = price_datetime.replace(microsecond=0)
-
-        return price_datetime

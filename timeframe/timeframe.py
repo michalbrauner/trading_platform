@@ -22,6 +22,9 @@ class TimeFrame(object):
     def __init__(self, time_frame):
         self.time_frame = time_frame
 
+    def as_string(self) -> str:
+        return self.time_frame
+
     def get_time_frame_border(self, time_to_analyze):
         # type: (datetime) -> tuple[datetime, datetime]
         datetime_in_seconds = int(time.mktime(time_to_analyze.timetuple()))

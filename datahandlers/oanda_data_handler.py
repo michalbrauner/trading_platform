@@ -5,7 +5,7 @@ from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
-from datahandlers.oanda_data_handler_bars_provider import OandaDataHandlerBarsProvider
+from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
 import asyncio
 from typing import Dict
 from typing import List
@@ -47,7 +47,7 @@ class OandaDataHandler(DataHandler):
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
         self.streams = streams
-        self.bars_provider = OandaDataHandlerBarsProvider(streams, symbol_list, TimeFrame(self.time_frame))
+        self.bars_provider = OandaBarsProviderStream(streams, symbol_list, TimeFrame(self.time_frame))
 
     def start_providing_bars(self) -> None:
         self.providing_bars_loop = asyncio.new_event_loop()
