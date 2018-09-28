@@ -37,6 +37,8 @@ class OandaDataHandlerBarsProvider(object):
             if not stream.is_connected():
                 stream.connect_to_stream()
 
+        some_stream_is_not_connected = False
+
         for stream in self.streams:
             if stream.response.status_code != 200:
                 for symbol in stream.get_instruments():
@@ -44,8 +46,10 @@ class OandaDataHandlerBarsProvider(object):
                         'action': 'exit',
                         'message': 'Stream not connected'
                     })
+                some_stream_is_not_connected = True
 
-                return
+        if some_stream_is_not_connected:
+            return
 
         # prices_file = open('f:\\apps\\python\\forex\\backtesting\\backtester_output\\trading_test\\prices.csv', 'w')
         prices_file = None
