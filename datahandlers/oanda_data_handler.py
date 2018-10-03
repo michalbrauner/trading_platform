@@ -6,6 +6,7 @@ from timeframe.timeframe import TimeFrame
 from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
 from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
+from datahandlers.bars_provider.oanda_bars_provider_api import OandaBarsProviderApi
 import asyncio
 from typing import Dict
 from typing import List
@@ -47,7 +48,8 @@ class OandaDataHandler(DataHandler):
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
         self.streams = streams
-        self.bars_provider = OandaBarsProviderStream(streams, symbol_list, TimeFrame(self.time_frame))
+        # self.bars_provider = OandaBarsProviderStream(streams, symbol_list, TimeFrame(self.time_frame))
+        self.bars_provider = OandaBarsProviderApi(symbol_list, self.instrument_api_client, TimeFrame(self.time_frame))
 
     def start_providing_bars(self) -> None:
         self.providing_bars_loop = asyncio.new_event_loop()
