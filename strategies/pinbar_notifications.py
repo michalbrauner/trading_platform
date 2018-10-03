@@ -50,8 +50,6 @@ class PinBarNotificationsStrategy(Strategy):
             price_high = self.bars.get_latest_bar_value(symbol, 'high_bid')
             price_low = self.bars.get_latest_bar_value(symbol, 'low_bid')
 
-            self.notify_about_pinbar(symbol, price_close, price_open, price_high, price_low, bar_date)
-
             size_of_bar = abs(price_high - price_low)
 
             if size_of_bar > 0:
