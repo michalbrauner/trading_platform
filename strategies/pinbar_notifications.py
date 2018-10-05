@@ -10,6 +10,7 @@ import urllib.request
 import json
 from typing import Dict
 from datetime import datetime
+from pytz import timezone
 
 try:
     import Queue as queue
@@ -71,6 +72,8 @@ class PinBarNotificationsStrategy(Strategy):
         opener = urllib.request.build_opener()
         opener.addheaders = [('Content-Type', 'application/json')]
 
+        bar_date_in_local_timezone = bar_date.astimezone(timezone('Europe/Prague'))
+
         data = json.dumps([
             {
                 'symbol': symbol,
@@ -78,7 +81,8 @@ class PinBarNotificationsStrategy(Strategy):
                 'price_open': price_open,
                 'price_high': price_high,
                 'price_low': price_low,
-                'bar_date': bar_date.strftime("%Y-%m-%d %H:%M:%S")
+                'bar_date_utc': bar_date.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                'bar_date_local': bar_date_in_local_timezone.strftime("%Y-%m-%d %H:%M:%S %Z")
             }
         ])
         data = data.encode('ascii')

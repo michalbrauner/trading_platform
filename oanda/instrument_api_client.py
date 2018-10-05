@@ -10,8 +10,10 @@ class InstrumentApiClient:
 
     def get_candles(self, instrument: str, granularity: str, count: int, from_datetime: str = None):
         s = requests.Session()
-        url = 'https://{}/v3/instruments/{}/candles?price={}&granularity={}&count={}'.format(
-            self.domain, instrument, 'BA', granularity, count)
+
+        url_configuration = '&dailyAlignment=0&alignmentTimezone=UTC'
+        url = 'https://{}/v3/instruments/{}/candles?price={}&granularity={}&count={}{}'.format(
+            self.domain, instrument, 'BA', granularity, count, url_configuration)
 
         if from_datetime is not None:
             url = '{}&from={}&includeFirst=False'.format(url, from_datetime)

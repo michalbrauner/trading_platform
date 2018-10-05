@@ -40,7 +40,6 @@ class BarsProvider(object):
     @staticmethod
     def get_price_datetime(datetime_as_string: str) -> datetime:
         price_datetime = parser.parse(datetime_as_string)
-        price_datetime = price_datetime.replace(tzinfo=None)
         price_datetime = price_datetime.replace(microsecond=0)
 
         return price_datetime
