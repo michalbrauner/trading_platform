@@ -18,12 +18,12 @@ except ImportError:
     import queue
 
 from datahandlers.data_handler import DataHandler
+from datahandlers.bars_provider.bars_provider import BarsProvider
 
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events_per_symbol: Dict[str, queue.Queue], symbol_list: list,
-                 streams: List[OandaPriceStream],
+    def __init__(self, events_per_symbol: Dict[str, queue.Queue], symbol_list: list, bars_provider: BarsProvider,
                  instrument_api_client: InstrumentApiClient, time_frame: str,
                  number_of_bars_preload_from_history: int) -> None:
 
@@ -38,6 +38,7 @@ class OandaDataHandler(DataHandler):
         self.error_message = None
         self.time_frame = time_frame
         self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
+        self.bars_provider = bars_provider
 
         self.instrument_api_client = instrument_api_client
 
@@ -46,10 +47,6 @@ class OandaDataHandler(DataHandler):
         if number_of_bars_preload_from_history > 0:
             for symbol in self.symbol_list:
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
-
-        self.streams = streams
-        # self.bars_provider = OandaBarsProviderStream(streams, symbol_list, TimeFrame(self.time_frame))
-        self.bars_provider = OandaBarsProviderApi(symbol_list, self.instrument_api_client, TimeFrame(self.time_frame))
 
     def start_providing_bars(self) -> None:
         self.providing_bars_loop = asyncio.new_event_loop()

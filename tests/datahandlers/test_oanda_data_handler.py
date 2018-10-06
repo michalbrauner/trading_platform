@@ -1,8 +1,10 @@
 import unittest
-from mock import patch
+from unittest.mock import patch
 from datahandlers.oanda_data_handler import OandaDataHandler
-from  timeframe.timeframe import TimeFrame
+from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
+from timeframe.timeframe import TimeFrame
 from datetime import datetime
+from oanda.instrument_api_client import InstrumentApiClient
 
 try:
     import Queue as queue
@@ -15,13 +17,22 @@ class TestOandaDataHandler(unittest.TestCase):
 
     @patch('oanda.stream.Stream')
     def test_update_bars(self, MockStream):
+        symbols = [self.symbol_eur_usd]
+        events_per_symbol = dict(((symbol, queue.Queue()) for (symbol) in symbols))
+
         stream = MockStream()
-        events = queue.Queue()
-
         stream.get_price.side_effect = self._get_prices_to_return()
+        streams = [stream]
 
-        data_handler = OandaDataHandler(events, [self.symbol_eur_usd], stream, TimeFrame.TIME_FRAME_S5)
-        data_handler.update_bars()
+        timeframe = TimeFrame(TimeFrame.TIME_FRAME_S5)
+
+        instrument_api_client = InstrumentApiClient('accesstoken')
+
+        bars_provider = OandaBarsProviderStream(streams, symbols, timeframe)
+
+        data_handler = OandaDataHandler(events_per_symbol, [self.symbol_eur_usd], bars_provider, instrument_api_client,
+                                        TimeFrame.TIME_FRAME_S5, 0)
+        data_handler.update_bars(self.symbol_eur_usd)
 
         self.assertEqual(
             {
