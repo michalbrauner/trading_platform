@@ -43,11 +43,19 @@ class OandaBarsProviderApi(BarsProvider):
                 last_datetime = self.last_bar_datetimes[symbol]
 
             last_bars = self.instrument_api_client.get_candles(symbol, self.time_frame.as_string(), 2, last_datetime)
+
+            if 'errorMessage' in last_bars:
+                self.queues[symbol].put_nowait({
+                    'action': 'exit',
+                    'message': 'Error from Oanda API call - {}'.format(last_bars['errorMessage'])
+                })
+
+                raise StopIteration(last_bars['errorMessage'])
+
             newest_closed_bar = None
             for candle in last_bars['candles']:
                 if candle['complete']:
-                    newest_closed_bar = last_bars['candles'][0]
-                    break
+                    newest_closed_bar = candle
 
             if newest_closed_bar is None:
                 time.sleep(self.reload_last_candle_delay_seconds)
