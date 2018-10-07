@@ -6,7 +6,7 @@ from timeframe.timeframe import TimeFrame
 
 
 class TestTimeFrame(unittest.TestCase):
-    test_get_timeframe_border_data = lambda: (
+    timeframe_border_data = lambda: (
         (
             (
                 datetime(year=2017, month=1, day=1, hour=10, minute=10, second=30),
@@ -49,7 +49,7 @@ class TestTimeFrame(unittest.TestCase):
         ),
     )
 
-    @data_provider(test_get_timeframe_border_data)
+    @data_provider(timeframe_border_data)
     def test_get_timeframe_border(self, expected_border, test_datetime, timeframe):
         timeframe_object = TimeFrame(timeframe)
 
