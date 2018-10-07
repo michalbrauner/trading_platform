@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from typing import Optional
 
 
 class DataHandler(object):
@@ -23,6 +24,10 @@ class DataHandler(object):
     @abstractmethod
     def backtest_should_continue(self):
         raise NotImplementedError("Should implement backtest_should_continue()")
+
+    @abstractmethod
+    def has_some_bars(self, symbol: str) -> bool:
+        raise NotImplementedError("Should implement has_some_bars()")
 
     @abstractmethod
     def get_latest_bar(self, symbol):
@@ -63,7 +68,7 @@ class DataHandler(object):
         raise NotImplementedError("Should implement get_latest_bars_values()")
 
     @abstractmethod
-    def update_bars(self):
+    def update_bars(self, symbol: str):
         """
         Pushes the latest bars to the bars_queue for each symbol
         in a tuple OHLCVI format: (datetime, open, high, low,
@@ -74,6 +79,10 @@ class DataHandler(object):
     @abstractmethod
     def get_position_in_percentage(self):
         raise NotImplementedError("Should implement get_position_in_percentage()")
+
+    @abstractmethod
+    def get_error_message(self) -> Optional[str]:
+        raise NotImplementedError("Should implement get_error_message()")
 
     @abstractmethod
     def get_number_of_bars(self, symbol):

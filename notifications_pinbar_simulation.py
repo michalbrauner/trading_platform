@@ -48,7 +48,7 @@ def main():
         'trades.csv',
     )
 
-    simulation.simulate_trading()
+    simulation.run()
     simulation.print_performance()
 
 

@@ -4,8 +4,15 @@ import numpy as np
 import pandas as pd
 import pandas.io.parsers
 from events.market_event import MarketEvent
-
 from datahandlers.data_handler import DataHandler
+from typing import Dict
+from typing import List
+from typing import Optional
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 class HistoricCSVDataHandler(DataHandler):
@@ -16,20 +23,16 @@ class HistoricCSVDataHandler(DataHandler):
     trading interface.
     """
 
-    def __init__(self, events, csv_dir, symbol_list):
+    def __init__(self, events_per_symbol: Dict[str, queue.Queue], csv_dir: str,
+                 symbol_list: List[str]) -> None:
         """
         Initialises the historic data handler by requesting
         the location of the CSV files and a list of symbols.
 
         It will be assumed that all files are of the form
         'symbol.csv', where symbol is a string in the list.
-
-        Parameters:
-        events - The Event Queue.
-        csv_dir - Absolute directory path to the CSV files.
-        symbol_list - A list of symbol strings.
         """
-        self.events = events
+        self.events_per_symbol = events_per_symbol
         self.csv_dir = csv_dir
         self.symbol_list = symbol_list
 
@@ -90,6 +93,9 @@ class HistoricCSVDataHandler(DataHandler):
         for b in self.symbol_data[symbol]:
             self.symbol_position_info[symbol]['position'] = self.symbol_position_info[symbol]['position'] + 1
             yield b
+
+    def has_some_bars(self, symbol: str) -> bool:
+        return symbol in self.latest_symbol_data and len(self.latest_symbol_data[symbol]) > 0
 
     def get_latest_bar(self, symbol):
         """
@@ -154,21 +160,19 @@ class HistoricCSVDataHandler(DataHandler):
         else:
             return np.array([getattr(b[1], val_type) for b in bars_list])
 
-    def update_bars(self):
+    def update_bars(self, symbol: str):
         """
         Pushes the latest bar to the latest_symbol_data structure
-        for all symbols in the symbol list.
+        for symbol
         """
-        for s in self.symbol_list:
-            try:
-                bar = next(self._get_new_bar(s))
-            except StopIteration:
-                self.continue_backtest = False
-            else:
-                if bar is not None:
-                    self.latest_symbol_data[s].append(bar)
-
-        self.events.put(MarketEvent())
+        try:
+            bar = next(self._get_new_bar(symbol))
+        except StopIteration:
+            self.continue_backtest = False
+        else:
+            if bar is not None:
+                self.latest_symbol_data[symbol].append(bar)
+                self.events_per_symbol[symbol].put(MarketEvent(symbol))
 
     def get_position_in_percentage(self):
         positions_in_percentage = list()
@@ -177,6 +181,9 @@ class HistoricCSVDataHandler(DataHandler):
             positions_in_percentage.append(self.get_position_in_percentage_for_symbol(s))
 
         return np.round(np.mean(positions_in_percentage), 2)
+
+    def get_error_message(self) -> Optional[str]:
+        return ''
 
     def get_position_in_percentage_for_symbol(self, symbol):
         position = float(self.symbol_position_info[symbol]['position'])

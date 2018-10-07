@@ -1,10 +1,16 @@
 import numpy as np
-import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 from events.market_event import MarketEvent
 from oanda.stream import Stream as OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
+from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
+from datahandlers.bars_provider.oanda_bars_provider_api import OandaBarsProviderApi
+import asyncio
+from typing import Dict
+from typing import List
+from typing import Optional
 
 try:
     import Queue as queue
@@ -12,32 +18,41 @@ except ImportError:
     import queue
 
 from datahandlers.data_handler import DataHandler
+from datahandlers.bars_provider.bars_provider import BarsProvider
 
 
 class OandaDataHandler(DataHandler):
 
-    def __init__(self, events: queue.Queue, symbol_list: list, stream: OandaPriceStream,
+    def __init__(self, events_per_symbol: Dict[str, queue.Queue], symbol_list: list, bars_provider: BarsProvider,
                  instrument_api_client: InstrumentApiClient, time_frame: str,
                  number_of_bars_preload_from_history: int) -> None:
 
-        self.events = events
+        self.events_per_symbol = events_per_symbol
+
         self.symbol_list = symbol_list
 
         self.symbol_data = {}
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
+        self.error_message = None
         self.time_frame = time_frame
         self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
+        self.bars_provider = bars_provider
 
         self.instrument_api_client = instrument_api_client
+
+        self.providing_bars_loop = None
 
         if number_of_bars_preload_from_history > 0:
             for symbol in self.symbol_list:
                 self.preload_bars_from_history(symbol, self.number_of_bars_preload_from_history)
 
-        self.stream = stream
-        self.stream.connect_to_stream()
+    def start_providing_bars(self) -> None:
+        self.providing_bars_loop = asyncio.new_event_loop()
+        executor = ThreadPoolExecutor(max_workers=1)
+
+        self.providing_bars_loop.run_in_executor(executor, self.bars_provider.start_providing_bars)
 
     def get_symbol_list(self) -> list:
         return self.symbol_list
@@ -60,47 +75,21 @@ class OandaDataHandler(DataHandler):
             self.append_new_price_data(symbol, bar_data)
 
     def _get_new_bar(self, symbol):
-        """
-        Returns the latest bar from the data feed as a tuple of
-        (sybmbol, datetime, open, low, high, close, volume).
-        """
 
-        openedBar = pd.DataFrame()
-        opened_bar_finishes_at = None
-        opened_bar_starts_at = None
+        if self.providing_bars_loop is None:
+            self.start_providing_bars()
 
-        timeframe = TimeFrame(self.time_frame)
+        symbol_data_queue = self.bars_provider.get_queue(symbol)
 
-        for price in self.stream.get_price():
-            if price['instrument'] == symbol:
-                newPriceData = pd.DataFrame(price, index=[price['datetime']])
+        while True:
+            symbol_data = symbol_data_queue.get(True)
 
-                price_datetime = self.get_price_datetime(price['datetime'])
+            if 'action' in symbol_data:
+                if symbol_data['action'] == 'exit':
+                    raise StopIteration(symbol_data['message'])
+            else:
+                yield symbol_data
 
-                bar_borders = timeframe.get_time_frame_border(price_datetime)
-
-                if opened_bar_finishes_at is None:
-                    opened_bar_finishes_at = bar_borders[1]
-                    opened_bar_starts_at = bar_borders[0]
-
-                if opened_bar_finishes_at >= price_datetime or 'datetime' not in openedBar:
-                    openedBar = openedBar.append(newPriceData)
-                else:
-                    price_bid_open = float(openedBar['bid'][0])
-                    price_bid_close = float(openedBar['bid'][-1])
-                    price_bid_high = float(openedBar['bid'].max())
-                    price_bid_low = float(openedBar['bid'].min())
-
-                    price_ask_open = float(openedBar['ask'][0])
-                    price_ask_close = float(openedBar['ask'][-1])
-                    price_ask_high = float(openedBar['ask'].max())
-                    price_ask_low = float(openedBar['ask'].min())
-
-                    data = self.create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low,
-                                                price_ask_open, price_bid_close, price_bid_high, price_bid_low,
-                                                price_bid_open)
-
-                    yield data
 
     @staticmethod
     def get_price_datetime(datetime_as_string):
@@ -147,7 +136,10 @@ class OandaDataHandler(DataHandler):
 
         self.latest_symbol_data[symbol].append(data)
 
-    def get_latest_bar(self, symbol):
+    def has_some_bars(self, symbol: str) -> bool:
+        return symbol in self.latest_symbol_data and len(self.latest_symbol_data[symbol]) > 0
+
+    def get_latest_bar(self, symbol: str):
         """
         Returns the last bar from the latest_symbol list.
         """
@@ -210,21 +202,23 @@ class OandaDataHandler(DataHandler):
         else:
             return np.array([b[val_type] for b in bars_list])
 
-    def update_bars(self):
+    def update_bars(self, symbol: str):
         """
         Pushes the latest bar to the latest_symbol_data structure
-        for all symbols in the symbol list.
+        for symbol
         """
-        for s in self.symbol_list:
-            try:
-                bar = next(self._get_new_bar(s))
-            except StopIteration:
-                self.continue_backtest = False
-            else:
-                if bar is not None:
-                    self.append_new_price_data(s, bar)
+        try:
+            bar = next(self._get_new_bar(symbol))
+        except StopIteration as e:
+            self.continue_backtest = False
+            self.error_message = e.value
+        else:
+            if bar is not None:
+                self.append_new_price_data(symbol, bar)
+                self.events_per_symbol[symbol].put(MarketEvent(symbol))
 
-        self.events.put(MarketEvent())
+    def get_error_message(self) -> Optional[str]:
+        return self.error_message
 
     def get_position_in_percentage(self):
         return 0

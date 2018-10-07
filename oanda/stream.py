@@ -1,5 +1,7 @@
 import requests
 import json
+import threading
+from typing import List
 
 
 class Stream:
@@ -12,21 +14,40 @@ class Stream:
 
         self.response = None
         self.response_iter_lines = None
+        self.connected = False
+        self.lock = threading.Lock()
+
+    def get_instruments(self) -> List[str]:
+        return self.instruments
 
     def connect_to_stream(self):
-        s = requests.Session()
-        url = 'https://{}/v3/accounts/{}/pricing/stream'.format(self.domain, self.account_id)
-        headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
-        params = {'instruments': ','.join(self.instruments)}
+        if self.lock.acquire(True, 10):
+            if self.is_connected():
+                return
 
-        try:
-            req = requests.Request('GET', url, headers=headers, params=params)
-            pre = req.prepare()
-            self.response = s.send(pre, stream=True, verify=True, timeout=(10, 60))
+            s = requests.Session()
+            url = 'https://{}/v3/accounts/{}/pricing/stream'.format(self.domain, self.account_id)
+            headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
+            params = {'instruments': ','.join(self.instruments)}
 
-        except Exception as e:
-            s.close()
-            raise Exception('Caught exception when connecting to stream\n' + str(e))
+            try:
+                req = requests.Request('GET', url, headers=headers, params=params)
+                pre = req.prepare()
+                self.response = s.send(pre, stream=True, verify=True, timeout=(10, 60))
+
+                if self.response.status_code == 200:
+                    self.connected = True
+
+            except Exception as e:
+                s.close()
+                raise Exception('Caught exception when connecting to stream\n' + str(e))
+            finally:
+                self.lock.release()
+        else:
+            raise Exception('Could not get lock')
+
+    def is_connected(self):
+        return self.connected
 
     def get_price(self):
 

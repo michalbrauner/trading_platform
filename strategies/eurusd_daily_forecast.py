@@ -20,6 +20,7 @@ from core.portfolio import Portfolio
 from datahandlers.data_handler import DataHandler
 import argparser_tools.basic
 from events.event import Event
+from typing import Dict
 
 import numpy as np
 
@@ -30,9 +31,9 @@ except ImportError:
 
 
 class EurUsdDailyForecastStrategy(Strategy):
-    def __init__(self, bars, portfolio, events, trained_model_file=None, train_data=None, model_output_file=None,
-                 model_start_date=None, stop_loss_pips=None, take_profit_pips=None, sma_short_period=None,
-                 sma_long_period=None):
+    def __init__(self, bars: DataHandler, portfolio: Portfolio, events_per_symbol: Dict[str, queue.Queue],
+                 trained_model_file=None, train_data=None, model_output_file=None, model_start_date=None,
+                 stop_loss_pips=None, take_profit_pips=None, sma_short_period=None, sma_long_period=None):
         """
 
         :type bars: DataHandler
@@ -49,7 +50,7 @@ class EurUsdDailyForecastStrategy(Strategy):
         """
         self.bars = bars
         self.symbol_list = self.bars.get_symbol_list()
-        self.events = events
+        self.events_per_symbol = events_per_symbol
         self.datetime_now = datetime.datetime.utcnow()
         self.portfolio = portfolio
 
@@ -141,8 +142,8 @@ class EurUsdDailyForecastStrategy(Strategy):
                                              n_jobs=1, random_state=None, verbose=0))
 
         models.append(SVC(C=1000000.0, cache_size=200, class_weight=None, coef0=0.0, degree=3,
-                    gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
-                    shrinking=True, tol=0.001, verbose=False))
+                          gamma=0.0001, kernel='rbf', max_iter=-1, probability=False, random_state=None,
+                          shrinking=True, tol=0.001, verbose=False))
 
         models.append(SVC())
 
@@ -234,7 +235,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                 take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
 
                 signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
-                self.events.put(signal)
+                self.events_per_symbol[symbol].put(signal)
 
                 return True
 
@@ -247,7 +248,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                 take_profit = self.calculate_take_profit_price(bar_price, self.take_profit_pips, direction)
 
                 signal = SignalEvent(1, symbol, bar_date, datetime_now, direction, 1.0, stop_loss, take_profit)
-                self.events.put(signal)
+                self.events_per_symbol[symbol].put(signal)
 
                 return True
 
@@ -261,7 +262,7 @@ class EurUsdDailyForecastStrategy(Strategy):
                 ((prediction > 0 and current_position.is_short()) or (prediction < 0 and current_position.is_long())):
             signal = SignalEvent(1, symbol, bar_date, datetime_now, 'EXIT', 1.0, None, None,
                                  current_position.get_trade_id())
-            self.events.put(signal)
+            self.events_per_symbol[symbol].put(signal)
 
             self.bought[symbol] = 'OUT'
 

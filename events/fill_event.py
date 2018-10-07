@@ -11,13 +11,12 @@ class FillEvent(Event):
     the commission of the trade from the brokerage.
     """
 
-    def __init__(self, timeindex: datetime, symbol: str, exchange: str, quantity: float, direction: str,
+    def __init__(self, time_index: datetime, symbol: str, exchange: str, quantity: float, direction: str,
                  fill_cost: Optional[float] = None, commission: Optional[float] = None, trade_id: Optional[int] = None):
 
-        super().__init__('FILL')
+        super().__init__('FILL', symbol)
 
-        self.timeindex = timeindex
-        self.symbol = symbol
+        self.time_index = time_index
         self.exchange = exchange
         self.quantity = quantity
         self.direction = direction
@@ -40,6 +39,6 @@ class FillEvent(Event):
     def get_as_string(self):
         return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, TradeId: %d' % \
                (
-                   self.timeindex, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,
+                   self.time_index, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,
                    self.trade_id
                )

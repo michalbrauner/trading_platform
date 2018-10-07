@@ -6,6 +6,8 @@ from events.order_event import OrderEvent
 from oanda.order_api_client import OrderApiClient
 from oanda.trade_api_client import TradeApiClient
 from loggers.logger import Logger
+from typing import Dict
+from datahandlers.data_handler import DataHandler
 
 try:
     import Queue as queue
@@ -14,16 +16,10 @@ except ImportError:
 
 
 class OandaExecutionHandler(ExecutionHandler):
-    def __init__(self, bars, events, account_id, access_token, logger):
-        """
-        :type bars: []
-        :type events: queue
-        :type account_id: str
-        :type access_token: str
-        :type logger: Logger
-        """
+    def __init__(self, bars: DataHandler, events_per_symbol: Dict[str, queue.Queue],
+                 account_id: str, access_token: str, logger: Logger):
         self.bars = bars
-        self.events = events
+        self.events_per_symbol = events_per_symbol
         self.access_token = access_token
         self.account_id = account_id
         self.logger = logger
@@ -61,7 +57,7 @@ class OandaExecutionHandler(ExecutionHandler):
                             None, 0
                         )
 
-                        self.events.put(fill_event)
+                        self.events_per_symbol[fill_event.symbol].put(fill_event)
 
                     self.logger.write(
                         'Error during executing the order: errorCode=%s, errorMessage="%s"' % (
@@ -91,7 +87,7 @@ class OandaExecutionHandler(ExecutionHandler):
                         'Executed the order with stopLoss=%10.5f, takeProfit=%10.5f' % (
                             stop_loss, take_profit))
 
-                    self.events.put(fill_event)
+                    self.events_per_symbol[fill_event.symbol].put(fill_event)
 
     def update_stop_and_limit_orders(self, market_event):
         pass

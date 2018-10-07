@@ -29,7 +29,7 @@ def main():
         MovingAverageCrossStrategy
     )
 
-    backtest.simulate_trading()
+    backtest.run()
 
 
 if __name__ == "__main__":
