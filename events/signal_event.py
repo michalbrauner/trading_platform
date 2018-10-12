@@ -2,11 +2,6 @@ from events.event import Event
 
 
 class SignalEvent(Event):
-    """
-    Handles the event of sending a Signal from a Strategy object.
-    This is received by a Portfolio object and acted upon.
-    """
-
     def __init__(self, strategy_id, symbol, bar_datetime, datetime, signal_type, strength, stop_loss=None,
                  take_profit=None, trade_id_to_exit=None):
         """

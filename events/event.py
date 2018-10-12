@@ -1,13 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from builtins import type
 
 
 class Event(object):
-    """
-    Event is base class providing an interface for all subsequent
-    (inherited) events, that will trigger further events in the
-    trading infrastructure.
-    """
     __metaclass__ = ABCMeta
 
     def __init__(self, event_type: str, symbol: str):

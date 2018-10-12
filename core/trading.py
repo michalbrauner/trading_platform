@@ -11,21 +11,20 @@ from core.portfolio import Portfolio
 from strategies.strategy import Strategy
 import os
 from core.worker import Worker
+import time
 
 try:
     import Queue as queue
 except ImportError:
     import queue
 
-import time
-
 
 class Trading(Worker):
     def __init__(self, output_directory: str, symbol_list: list, heartbeat: int, configuration: Configuration,
                  data_handler_factory: DataHandlerFactory, execution_handler_factory: ExecutionHandlerFactory,
-                 portfolio_class: Type[Portfolio], strategy_class: Type[Strategy], position_size_handler: PositionSizeHandler,
-                 logger: Logger, enabled_log_types: list, strategy_params_dict: dict, equity_filename: str,
-                 trades_filename: str):
+                 portfolio_class: Type[Portfolio], strategy_class: Type[Strategy],
+                 position_size_handler: PositionSizeHandler, logger: Logger, enabled_log_types: list,
+                 strategy_params_dict: dict, equity_filename: str, trades_filename: str) -> None:
 
         self.output_directory = output_directory
         self.symbol_list = SymbolNameConverter().convert_symbol_names_to_oanda_symbol_names(symbol_list)
@@ -167,4 +166,3 @@ class Trading(Worker):
 
     def get_symbol_list(self) -> list:
         return self.symbol_list
-

@@ -47,30 +47,20 @@ class OandaBarsProviderStream(BarsProvider):
         if some_stream_is_not_connected:
             return
 
-        # prices_file = open('f:\\apps\\python\\forex\\backtesting\\backtester_output\\trading_test\\prices.csv', 'w')
-        prices_file = None
-
         futures = []
 
         executor = ThreadPoolExecutor(max_workers=len(self.streams))
         streams_loop = asyncio.new_event_loop()
         for stream in self.streams:
-            futures.append(streams_loop.run_in_executor(executor, self.handle_prices_stream, stream, prices_file))
+            futures.append(streams_loop.run_in_executor(executor, self.handle_prices_stream, stream))
 
         done, futures = asyncio.wait(futures, loop=streams_loop, return_when=asyncio.ALL_COMPLETED)
 
-        # prices_file.close()
-
-    def handle_prices_stream(self, stream: OandaPriceStream, prices_file):
+    def handle_prices_stream(self, stream: OandaPriceStream):
         for price in stream.get_price():
             symbol = price['instrument']
 
             price_datetime = self.get_price_datetime(price['datetime'])
-
-            if prices_file is not None:
-                prices_file.write('price;{};{};{};{}\n'.format(symbol, price_datetime, price['ask'], price['bid']))
-                prices_file.flush()
-
             bar_borders = self.time_frame.get_time_frame_border(price_datetime)
 
             if self.opened_bars_finishes_at[symbol] is None:
@@ -95,11 +85,6 @@ class OandaBarsProviderStream(BarsProvider):
                                             price_ask_low,
                                             price_ask_open, price_bid_close, price_bid_high, price_bid_low,
                                             price_bid_open)
-
-                if prices_file is not None:
-                    prices_file.write('bar;{};{};{}\n'.format(symbol, self.opened_bars_starts_at[symbol],
-                                                              self.opened_bars_finishes_at[symbol]))
-                    prices_file.flush()
 
                 self.opened_bars_finishes_at[symbol] = None
                 self.opened_bars_starts_at[symbol] = None

@@ -2,13 +2,9 @@ from events.event import Event
 
 
 class ClosePendingOrdersEvent(Event):
-    """
-    Handles the event in order to close pending orders
-    """
-
-    def __init__(self, symbol):
+    def __init__(self, symbol: str) -> None:
 
         super().__init__('CLOSE_PENDING_ORDERS', symbol)
 
-    def get_as_string(self):
+    def get_as_string(self) -> str:
         return 'ClosePendingOrders: %s' % self.symbol

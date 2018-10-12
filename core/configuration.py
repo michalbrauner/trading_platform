@@ -1,7 +1,3 @@
-from datahandlers.data_handler import DataHandler
-from executionhandlers.execution_handler import ExecutionHandler
-
-
 class Configuration(object):
 
     OPTION_CSV_DIR = 'csv_dir'

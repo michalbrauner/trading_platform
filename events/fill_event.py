@@ -4,13 +4,6 @@ from typing import Optional
 
 
 class FillEvent(Event):
-    """
-    Encapsulates the notion of a Filled Order, as returned
-    from a brokerage. Stores the quantity of an instrument
-    actually filled and at what price. In addition, stores
-    the commission of the trade from the brokerage.
-    """
-
     def __init__(self, time_index: datetime, symbol: str, exchange: str, quantity: float, direction: str,
                  fill_cost: Optional[float] = None, commission: Optional[float] = None, trade_id: Optional[int] = None):
 
@@ -36,7 +29,7 @@ class FillEvent(Event):
         else:
             self.trade_id = trade_id
 
-    def get_as_string(self):
+    def get_as_string(self) -> str:
         return 'Fill: TimeIndex: %s, Symbol: %s, Exchange: %s, Quantity: %f, Direction: %s,  FillCost: %f, TradeId: %d' % \
                (
                    self.time_index, self.symbol, self.exchange, self.quantity, self.direction, self.fill_cost,

@@ -2,7 +2,6 @@ import re
 import argparse
 import os
 import datetime
-import string
 from timeframe.timeframe import TimeFrame
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -37,9 +36,7 @@ def existing_file(value):
     return value
 
 
-def create_basic_argument_parser(backtest_only):
-    # (bool) -> argparse.ArgumentParser
-
+def create_basic_argument_parser(backtest_only: bool):
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--symbols', nargs='+', required=True)
     parser.add_argument('-o', '--output_directory', type=existing_directory, required=True)
@@ -50,9 +47,7 @@ def create_basic_argument_parser(backtest_only):
     return parser
 
 
-def with_backtest_arguments(parser):
-    # (argparse.ArgumentParser) -> argparse.ArgumentParser
-
+def with_backtest_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('-d', '--data_directory', type=existing_directory, required=True)
     parser.add_argument('-c', '--initial_capital_usd', type=int, required=True)
     parser.add_argument('-b', '--start_date', type=datetime_argument, required=True)
@@ -60,18 +55,14 @@ def with_backtest_arguments(parser):
     return parser
 
 
-def with_sl_and_tp(parser):
-    # (argparse.ArgumentParser) -> argparse.ArgumentParser
-
+def with_sl_and_tp(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--stop_loss', type=int)
     parser.add_argument('--take_profit', type=int)
 
     return parser
 
 
-def with_sma_short_and_long(parser):
-    # (argparse.ArgumentParser) -> argparse.ArgumentParser
-
+def with_sma_short_and_long(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('--short_window', type=int)
     parser.add_argument('--long_window', type=int)
 

@@ -1,5 +1,4 @@
 from __future__ import print_function
-import pprint
 import sys
 from datahandlers.data_handler_factory import DataHandlerFactory
 from core.portfolio import Portfolio
@@ -7,28 +6,25 @@ from core.configuration import Configuration
 from strategies.strategy import Strategy
 from positionsizehandlers.position_size import PositionSizeHandler
 from loggers.logger import Logger
-from executionhandlers.execution_handler import ExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
+import time
+import datetime
+from core.worker import Worker
 
 try:
     import Queue as queue
 except ImportError:
     import queue
 
-import time
-import datetime
-from core.worker import Worker
-
 
 class Backtest(Worker):
     def __init__(
-            self, output_directory, symbol_list, initial_capital,
-            heartbeat, start_date, configuration, data_handler_factory,
-            execution_handler_factory, portfolio_class, strategy_class, position_size_handler, logger, enabled_logs,
-            strategy_params_dict, equity_filename, trades_filename
-    ):
-        # type: (str, [], int, int, datetime, Configuration, DataHandlerFactory, ExecutionHandlerFactory, Portfolio.__name__, Strategy.__name__, PositionSizeHandler.__name__, Logger, [], {}, str, str) -> None
-
+            self, output_directory: str, symbol_list: list, initial_capital: int, heartbeat: int, start_date: datetime,
+            configuration: Configuration, data_handler_factory: DataHandlerFactory,
+            execution_handler_factory: ExecutionHandlerFactory, portfolio_class: Portfolio.__name__,
+            strategy_class: Strategy.__name__, position_size_handler: PositionSizeHandler.__name__, logger: Logger,
+            enabled_logs: list, strategy_params_dict: dict, equity_filename: str, trades_filename: str
+    ) -> None:
         self.output_directory = output_directory
         self.symbol_list = symbol_list
         self.initial_capital = initial_capital

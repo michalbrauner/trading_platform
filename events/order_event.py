@@ -34,10 +34,7 @@ class OrderEvent(Event):
         self.trade_id_related_to = trade_id_related_to
         self.trade_to_exit_direction = trade_to_exit_direction
 
-    def get_as_string(self):
-        """
-        Return this order as a string
-        """
+    def get_as_string(self) -> str:
         return 'Order: Symbol=%s, Type=%s, Quantity=%s, Direction=%s, StopLoss=%f, TakeProfit=%f, Price=%f, ' \
                'Note=%s, TradeIdRelatedTo=%d, TradeToExitDirection=%s' % \
                (self.symbol, self.order_type, self.quantity, self.direction,

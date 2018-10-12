@@ -4,7 +4,7 @@ import sys
 from core.portfolio import Portfolio
 from loggers.logger import Logger
 from concurrent.futures import ThreadPoolExecutor
-from datahandlers.data_handler import DataHandler
+
 
 class Worker(object):
 

@@ -1,24 +1,18 @@
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from events.market_event import MarketEvent
-from oanda.stream import Stream as OandaPriceStream
-from timeframe.timeframe import TimeFrame
 from dateutil import parser
 from oanda.instrument_api_client import InstrumentApiClient
-from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
-from datahandlers.bars_provider.oanda_bars_provider_api import OandaBarsProviderApi
 import asyncio
 from typing import Dict
-from typing import List
 from typing import Optional
+from datahandlers.data_handler import DataHandler
+from datahandlers.bars_provider.bars_provider import BarsProvider
 
 try:
     import Queue as queue
 except ImportError:
     import queue
-
-from datahandlers.data_handler import DataHandler
-from datahandlers.bars_provider.bars_provider import BarsProvider
 
 
 class OandaDataHandler(DataHandler):

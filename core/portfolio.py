@@ -1,10 +1,3 @@
-from __future__ import print_function
-
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-
 import os
 import pandas as pd
 from events.order_event import OrderEvent
@@ -15,36 +8,16 @@ from core.stats import Stats
 from core.position import Position
 from typing import Dict
 
+try:
+    import Queue as queue
+except ImportError:
+    import queue
+
 
 class Portfolio(object):
-    """
-    The Portfolio class handles the positions and market
-    value of all instruments at a resolution of a "bar",
-    i.e. secondly, minutely, 5-min, 30-min, 60 min or EOD.
-
-    The positions DataFrame stores a time-index of the
-    quantity of positions held.
-
-    The holdings DataFrame stores the cash and total market
-    holdings value of each symbol for a particular
-    time-index, as well as the percentage change in
-    portfolio total across bars.
-    """
-
     def __init__(self, bars, events_per_symbol: Dict[str, queue.Queue], start_date,
                  initial_capital, output_directory, equity_filename, trades_filename,
-                 position_size_handler):
-        """
-        Initialises the portfolio with bars and an event queue.
-        Also includes a starting datetime index and initial capital
-        (USD unless otherwise stated).
-        Parameters:
-        bars - The DataHandler object with current market data.
-        events - The Event Queue object.
-        start_date - The start date (bar) of the portfolio.
-        initial_capital - The starting capital in USD.
-        position_size_handler - Calculate position size for new order
-        """
+                 position_size_handler) -> None:
         self.bars = bars
         self.events_per_symbol = events_per_symbol
         self.symbol_list = self.bars.symbol_list
@@ -68,20 +41,12 @@ class Portfolio(object):
         return self.current_positions[symbol]
 
     def construct_all_positions(self):
-        """
-        Constructs the positions list using the start_date
-        to determine when the time index will begin.
-        """
         d = dict((k, v) for k, v in [(s, None) for s in self.symbol_list])
         d['datetime'] = self.start_date
 
         return [d]
 
     def construct_all_holdings(self):
-        """
-        Constructs the holdings list using the start_date
-        to determine when the time index will begin.
-        """
         d = dict((k, v) for k, v in [(s, 0.0) for s in self.symbol_list])
         d['datetime'] = self.start_date
         d['cash'] = self.initial_capital
@@ -91,10 +56,6 @@ class Portfolio(object):
         return [d]
 
     def construct_current_holdings(self):
-        """
-        This constructs the dictionary which will hold the instantaneous
-        value of the portfolio across all symbols.
-        """
         d = dict((k, v) for k, v in [(s, 0.0) for s in self.symbol_list])
         d['cash'] = self.initial_capital
         d['commission'] = 0.0
@@ -103,12 +64,6 @@ class Portfolio(object):
         return d
 
     def update_timeindex(self):
-        """
-        Adds a new record to the positions matrix for the current
-        market data bar. This reflects the PREVIOUS bar, i.e. all
-        current market data at this stage is known (OHLCV).
-        Makes use of a MarketEvent from the events queue.
-        """
         latest_datetime = None
         for symbol in self.symbol_list:
             if self.bars.has_some_bars(symbol):
@@ -208,9 +163,7 @@ class Portfolio(object):
             self.trades[fill.trade_id]['profit'] = cost + self.trades[fill.trade_id]['openCost']
             self.trades[fill.trade_id]['commission'] = self.trades[fill.trade_id]['commission'] + fill.commission
 
-    def get_fill_direction_koeficient(self, fill):
-        # type: (FillEvent) -> int
-
+    def get_fill_direction_koeficient(self, fill: FillEvent) -> int:
         fill_direction_koeficient = 0
 
         if fill.direction == 'BUY':
@@ -230,23 +183,11 @@ class Portfolio(object):
         return fill_direction_koeficient
 
     def update_fill(self, event):
-        """
-        Updates the portfolio current positions and holdings
-        from a FillEvent.
-        """
         if event.type == 'FILL':
             self.update_holdings_from_fill(event)
             self.update_positions_from_fill(event)
 
     def generate_naive_order(self, signal):
-        """
-        Simply files an Order object as a constant quantity
-        sizing of the signal object, without risk management or
-        position sizing considerations.
-
-        Parameters:
-        signal - The tuple containing Signal information.
-        """
         order = None
         symbol = signal.symbol
         direction = signal.signal_type
@@ -279,10 +220,6 @@ class Portfolio(object):
         return order
 
     def update_signal(self, event):
-        """
-        Acts on a SignalEvent to generate new orders
-        based on the portfolio logic.
-        """
         if event.type == 'SIGNAL':
             order_event = self.generate_naive_order(event)
 
@@ -294,10 +231,6 @@ class Portfolio(object):
                 self.events_per_symbol[close_pending_orders_event.symbol].put(close_pending_orders_event)
 
     def create_equity_curve_dataframe(self):
-        """
-        Creates a pandas DataFrame from the all_holdings
-        list of dictionaries.
-        """
         curve = pd.DataFrame(self.all_holdings)
         curve.set_index('datetime', inplace=True)
         curve['returns'] = curve['total'].pct_change()
@@ -305,9 +238,6 @@ class Portfolio(object):
         self.equity_curve = curve
 
     def output_summary_stats(self):
-        """
-        Creates a list of summary statistics for the portfolio.
-        """
         total_return = self.equity_curve['equity_curve'][-1]
         returns = self.equity_curve['returns']
         pnl = self.equity_curve['equity_curve']
