@@ -20,7 +20,7 @@ except ImportError:
 
 class PinBarNotificationsStrategy(Strategy):
     def __init__(self, bars: DataHandler, portfolio: Portfolio, events_per_symbol: Dict[str, queue.Queue],
-                 send_notifications: bool):
+                 send_notifications: bool, webhook: str):
         self.bars = bars
         self.portfolio = portfolio
         self.events_per_symbol = events_per_symbol
@@ -29,7 +29,7 @@ class PinBarNotificationsStrategy(Strategy):
         # Set to True if a symbol is in the market
         self.bought = self._calculate_initial_bought()
 
-        self.webhook_to_call = 'https://hooks.zapier.com/hooks/catch/3483057/w8sbxq/'
+        self.webhook = webhook
 
     def _calculate_initial_bought(self) -> dict:
         bought = {}
@@ -87,7 +87,7 @@ class PinBarNotificationsStrategy(Strategy):
         ])
         data = data.encode('ascii')
 
-        with opener.open(self.webhook_to_call, data) as response:
+        with opener.open(self.webhook, data) as response:
             response = response.read().decode('utf-8')
 
     @staticmethod

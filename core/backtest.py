@@ -56,7 +56,7 @@ class Backtest(Worker):
     def _generate_trading_instances(self):
 
         self.data_handler = self.data_handler_factory.create_from_settings(self.configuration, self.events_per_symbol,
-                                                                           self.symbol_list)
+                                                                           self.symbol_list, self.logger)
 
         self.portfolio = self.portfolio_class(self.data_handler, self.events_per_symbol, self.start_date,
                                               self.initial_capital, self.output_directory, self.equity_filename,

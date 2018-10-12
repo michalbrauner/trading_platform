@@ -23,6 +23,8 @@ def main():
     events_log_file = '{}/events.log'.format(args_namespace.output_directory)
 
     strategy_params = strategy.get_strategy_params(args_namespace)
+    strategy_params['send_notifications'] = False
+    strategy_params['webhook'] = ''
 
     configuration = Configuration(data_handler_name=HistoricCSVDataHandler,
                                   execution_handler_name=SimulatedExecutionHandler)

@@ -25,6 +25,7 @@ def main():
 
     strategy_params = strategy.get_strategy_params(args_namespace)
     strategy_params['send_notifications'] = True
+    strategy_params['webhook'] = os.environ.get('WEBHOOK_PINBAR_NOTIFIER')
 
     configuration = Configuration(data_handler_name=OandaDataHandler, execution_handler_name=OandaExecutionHandler)
     configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY, '0')

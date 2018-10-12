@@ -10,7 +10,6 @@ from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
 import os
 from datahandlers.oanda_data_handler import OandaDataHandler
-from timeframe.timeframe import TimeFrame
 
 
 def get_strategy():

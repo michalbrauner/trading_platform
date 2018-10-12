@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datahandlers.bars_provider.bars_provider import BarsProvider
 from oanda.instrument_api_client import InstrumentApiClient
 import time
+from loggers.logger import Logger
 
 try:
     import Queue as queue
@@ -13,14 +14,18 @@ except ImportError:
 
 class OandaBarsProviderApi(BarsProvider):
 
-    def __init__(self, symbols: list, instrument_api_client: InstrumentApiClient, time_frame: TimeFrame):
+    def __init__(self, symbols: list, instrument_api_client: InstrumentApiClient, time_frame: TimeFrame,
+                 logger: Logger):
         self.symbols = symbols
         self.instrument_api_client = instrument_api_client
         self.time_frame = time_frame
+        self.logger = logger
 
         self.queues = dict((symbol, queue.Queue()) for (symbol) in symbols)
         self.last_bar_datetimes = dict((symbol, None) for (symbol) in symbols)
         self.reload_last_candle_delay_seconds = 5
+        self.max_attempts_to_recover_after_oanda_exception = 5
+        self.attempts_to_recover_after_oanda_exception = 0
 
     def get_queue(self, symbol: str) -> queue.Queue:
         return self.queues[symbol]
@@ -42,20 +47,27 @@ class OandaBarsProviderApi(BarsProvider):
             if symbol in self.last_bar_datetimes:
                 last_datetime = self.last_bar_datetimes[symbol]
 
-            last_bars = self.instrument_api_client.get_candles(symbol, self.time_frame.as_string(), 2, last_datetime)
-
-            if 'errorMessage' in last_bars:
-                self.queues[symbol].put_nowait({
-                    'action': 'exit',
-                    'message': 'Error from Oanda API call - {}'.format(last_bars['errorMessage'])
-                })
-
-                raise StopIteration(last_bars['errorMessage'])
-
             newest_closed_bar = None
-            for candle in last_bars['candles']:
-                if candle['complete']:
-                    newest_closed_bar = candle
+
+            try:
+                last_bars = self.instrument_api_client.get_candles(symbol, self.time_frame.as_string(), 2,
+                                                                   last_datetime)
+
+                if 'errorMessage' in last_bars:
+                    self.stop_providing_bars_for_symbol(symbol, last_bars['errorMessage'])
+
+                for candle in last_bars['candles']:
+                    if candle['complete']:
+                        newest_closed_bar = candle
+
+            except Exception as e:
+                self.attempts_to_recover_after_oanda_exception += 1
+
+                if self.attempts_to_recover_after_oanda_exception > self.max_attempts_to_recover_after_oanda_exception:
+                    self.stop_providing_bars_for_symbol(symbol, str(e))
+                else:
+                    self.logger.write('Error from Oanda API call, recover attempt: {}, error: {}'.format(
+                        self.attempts_to_recover_after_oanda_exception, str(e)))
 
             if newest_closed_bar is None:
                 time.sleep(self.reload_last_candle_delay_seconds)
@@ -75,3 +87,11 @@ class OandaBarsProviderApi(BarsProvider):
                 self.queues[symbol].put_nowait(bar_data)
 
             time.sleep(self.reload_last_candle_delay_seconds)
+
+    def stop_providing_bars_for_symbol(self, symbol: str, message: str):
+        self.queues[symbol].put_nowait({
+            'action': 'exit',
+            'message': 'Error from Oanda API call, error: {}'.format(message)
+        })
+
+        raise StopIteration(message)
