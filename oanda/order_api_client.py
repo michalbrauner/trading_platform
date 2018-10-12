@@ -9,14 +9,8 @@ class OrderApiClient:
         self.account_id = account_id
         self.domain = 'api-fxpractice.oanda.com'
 
-    def create_new_order(self, direction, units, instrument, stop_loss=None, take_profit=None):
-        """
-        :type direction: str
-        :type units: int
-        :type instrument: str
-        :type stop_loss: float
-        :type take_profit: float
-        """
+    def create_new_order(self, direction: str, units: int, instrument: str, stop_loss: float = None,
+                         take_profit: float = None):
         if (direction == 'SELL' and units > 0) or (direction == 'BUY' and units < 0):
             units = units * -1
 
@@ -40,11 +34,7 @@ class OrderApiClient:
 
         return response
 
-    def create_take_profit_order(self, trade_id, price):
-        """
-        :type trade_id: str
-        :type price: float
-        """
+    def create_take_profit_order(self, trade_id: str, price: float):
         data = {
             'order': {
                 'type': 'TAKE_PROFIT',
@@ -57,14 +47,7 @@ class OrderApiClient:
 
         return self.send_request(self.get_orders_endpoint(), data)
 
-    def create_new_exit_order(self, units, instrument, trade_id, trade_to_exit_direction):
-        """
-        :type direction: str
-        :type units: int
-        :type instrument: str
-        :type trade_id: int
-        :type trade_to_exit_direction: string
-        """
+    def create_new_exit_order(self, units: int, instrument: str, trade_id: int, trade_to_exit_direction: str):
         if (trade_to_exit_direction == 'SELL' and units < 0) or (trade_to_exit_direction == 'BUY' and units > 0):
             units = units * -1
 
@@ -82,12 +65,7 @@ class OrderApiClient:
 
         return self.send_request(self.get_orders_endpoint(), data)
 
-    def send_request(self, url, data):
-        """
-        :type url: str
-        :type data: dict
-        """
-
+    def send_request(self, url: str, data: dict):
         s = requests.Session()
         headers = {
             'Authorization': 'Bearer {}'.format(self.access_token),

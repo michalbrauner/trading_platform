@@ -9,21 +9,12 @@ class TradeApiClient:
         self.account_id = account_id
         self.domain = 'api-fxpractice.oanda.com'
 
-    def close_trade(self, trade_id):
-        """
-        :type trade_id: int
-        """
-
+    def close_trade(self, trade_id: int):
         data = {'units': 'ALL'}
 
         return self.send_request(self.get_close_trade_endpoint(trade_id), 'PUT', data)
 
-    def send_request(self, url, method, data):
-        """
-        :type url: str
-        :type data: dict
-        """
-
+    def send_request(self, url: str, method: str, data: dict):
         s = requests.Session()
         headers = {
             'Authorization': 'Bearer {}'.format(self.access_token),
