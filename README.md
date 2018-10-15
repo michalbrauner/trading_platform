@@ -1,21 +1,21 @@
 # TradingPlatform
 
-Trading platform is a tool for developing, testing and trading strategies.  
+The TradingPlatform is a tool for developing, testing and trading strategies.  
 You can write your own strategies (see examples in `strategies` directory.), test them using historical data in CSV file 
 and then trade them (currently only Oanda is supported).
 
-More detailed documentation will be written in future, so far there are some examples in root directory:
+More detailed documentation will be written in future, so far there are some examples in the root directory:
 - `backtest_eurusd_daily_forecast.py` - historical backtest of `EurUsdDailyForecastStrategy` strategy 
 - `notifications_pinbar_oanda.py` - strategy `PinBarNotificationsStrategy` detects PinBars and call webhook (for example to send an email)
 - `notifications_pinbar_simulation.py` - simulation of strategy `PinBarNotificationsStrategy` 
-- `optimize_eurusd_daily_forecast.py` - optimalization of strategy `EurUsdDailyForecastStrategy` (finding best parameters)
-- `trading_debug_trading.py` - strategy `DebugTradingStrategy` reads file and take signals from it. I use it to test sending orders to the market.
+- `optimize_eurusd_daily_forecast.py` - optimization of strategy `EurUsdDailyForecastStrategy` (finding best parameters)
+- `trading_debug_trading.py` - strategy `DebugTradingStrategy` reads the file and take signals from it. I use it to test sending orders to the market.
 - `trading_eurusd_daily_forecast.py` - trading a strategy `EurUsdDailyForecastStrategy` 
 - `trading_eurusd_mac.py` - trading a strategy `MovingAverageCrossStrategy`
 
-#### Instalation
-Platform is tested on Python 3.6. 
-You can install all requirements by command: `pip install -r requirements.txt`
+#### Installation
+The platform is tested on Python 3.6. 
+You can install all requirements by the command: `pip install -r requirements.txt`
 
 #### Example of usage
 
