@@ -4,5 +4,5 @@ requests==2.15.1
 urllib3==1.11
 numpy==1.14.2
 scikit_learn==0.19.1
-unittest-data-provider
 setuptools
+unittest-data-provider
