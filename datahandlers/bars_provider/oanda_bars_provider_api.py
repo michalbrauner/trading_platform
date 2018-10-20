@@ -23,7 +23,7 @@ class OandaBarsProviderApi(BarsProvider):
 
         self.queues = dict((symbol, queue.Queue()) for (symbol) in symbols)
         self.last_bar_datetimes = dict((symbol, None) for (symbol) in symbols)
-        self.reload_last_candle_delay_seconds = 5
+        self.reload_last_candle_delay_seconds = 60
         self.max_attempts_to_recover_after_oanda_exception = 5
         self.attempts_to_recover_after_oanda_exception = 0
 
