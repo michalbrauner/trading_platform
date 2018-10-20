@@ -39,15 +39,15 @@ class HistoricCSVDataHandler(DataHandler):
         self.symbol_data = {}
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
-        self.continue_backtest = True
+        self.continue_backtest_per_symbols = dict(((symbol, True) for (symbol) in self.symbol_list))
 
         self._open_convert_csv_files()
 
     def get_symbol_list(self) -> list:
         return self.symbol_list
 
-    def backtest_should_continue(self):
-        return self.continue_backtest
+    def backtest_should_continue(self, symbol: str):
+        return self.continue_backtest_per_symbols[symbol]
 
     def _open_convert_csv_files(self):
         """
@@ -168,7 +168,7 @@ class HistoricCSVDataHandler(DataHandler):
         try:
             bar = next(self._get_new_bar(symbol))
         except StopIteration:
-            self.continue_backtest = False
+            self.continue_backtest_per_symbols[symbol] = False
         else:
             if bar is not None:
                 self.latest_symbol_data[symbol].append(bar)

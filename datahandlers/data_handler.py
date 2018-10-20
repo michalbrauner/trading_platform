@@ -22,7 +22,7 @@ class DataHandler(object):
         raise NotImplementedError("Should implement get_symbol_list()")
 
     @abstractmethod
-    def backtest_should_continue(self):
+    def backtest_should_continue(self, symbol: str) -> bool:
         raise NotImplementedError("Should implement backtest_should_continue()")
 
     @abstractmethod

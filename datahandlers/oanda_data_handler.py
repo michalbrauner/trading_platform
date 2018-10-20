@@ -28,7 +28,7 @@ class OandaDataHandler(DataHandler):
         self.symbol_data = {}
         self.symbol_position_info = {}
         self.latest_symbol_data = {}
-        self.continue_backtest = True
+        self.continue_backtest_per_symbols = dict(((symbol, True) for (symbol) in self.symbol_list))
         self.error_message = None
         self.time_frame = time_frame
         self.number_of_bars_preload_from_history = number_of_bars_preload_from_history
@@ -51,8 +51,8 @@ class OandaDataHandler(DataHandler):
     def get_symbol_list(self) -> list:
         return self.symbol_list
 
-    def backtest_should_continue(self):
-        return self.continue_backtest
+    def backtest_should_continue(self, symbol: str) -> bool:
+        return self.continue_backtest_per_symbols[symbol]
 
     def preload_bars_from_history(self, symbol, number_of_bars):
         candles_data = self.instrument_api_client.get_candles(symbol, self.time_frame, number_of_bars)
@@ -204,7 +204,7 @@ class OandaDataHandler(DataHandler):
         try:
             bar = next(self._get_new_bar(symbol))
         except StopIteration as e:
-            self.continue_backtest = False
+            self.continue_backtest_per_symbols[symbol] = False
             self.error_message = e.value
         else:
             if bar is not None:
