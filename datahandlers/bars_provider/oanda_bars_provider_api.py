@@ -39,7 +39,7 @@ class OandaBarsProviderApi(BarsProvider):
         for symbol in self.symbols:
             futures.append(streams_loop.run_in_executor(executor, self.handle_bars_for_symbol, symbol))
 
-        done, futures = asyncio.wait(futures, loop=streams_loop, return_when=asyncio.ALL_COMPLETED)
+        asyncio.wait(futures, loop=streams_loop, return_when=asyncio.ALL_COMPLETED)
 
     def handle_bars_for_symbol(self, symbol: str):
         while True:

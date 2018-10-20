@@ -33,6 +33,7 @@ class TestOandaDataHandler(unittest.TestCase):
         bars_provider.start_providing_bars = MagicMock()
 
         instrument_api_client = InstrumentApiClient('accesstoken')
+        instrument_api_client.start_process_requests()
 
         data_handler = OandaDataHandler(events_per_symbol, [symbol_eur_usd], bars_provider, instrument_api_client,
                                         TimeFrame.TIME_FRAME_S5, 0)

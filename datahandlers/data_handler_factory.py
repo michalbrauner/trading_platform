@@ -48,6 +48,7 @@ class DataHandlerFactory:
                                   time_frame: str, number_of_bars_preload_from_history: int,
                                   logger: Logger) -> DataHandler:
         instrument_api_client = InstrumentApiClient(access_token)
+        instrument_api_client.start_process_requests()
 
         bars_provider = OandaBarsProviderApi(symbol_list, instrument_api_client, TimeFrame(time_frame), logger)
 
