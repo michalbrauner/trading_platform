@@ -23,9 +23,10 @@ class OandaBarsProviderApi(BarsProvider):
 
         self.queues = dict((symbol, queue.Queue()) for (symbol) in symbols)
         self.last_bar_datetimes = dict((symbol, None) for (symbol) in symbols)
-        self.reload_last_candle_delay_seconds = 60
+        self.reload_last_candle_delay_seconds = 2 * 60
         self.max_attempts_to_recover_after_oanda_exception = 5
-        self.attempts_to_recover_after_oanda_exception = 0
+
+        self.attempts_to_recover_after_oanda_exception = dict((symbol, 0) for (symbol) in symbols)
 
     def get_queue(self, symbol: str) -> queue.Queue:
         return self.queues[symbol]
@@ -61,13 +62,14 @@ class OandaBarsProviderApi(BarsProvider):
                         newest_closed_bar = candle
 
             except Exception as e:
-                self.attempts_to_recover_after_oanda_exception += 1
+                self.attempts_to_recover_after_oanda_exception[symbol] += 1
 
-                if self.attempts_to_recover_after_oanda_exception > self.max_attempts_to_recover_after_oanda_exception:
+                current_number_of_attempts = self.attempts_to_recover_after_oanda_exception[symbol]
+                if current_number_of_attempts > self.max_attempts_to_recover_after_oanda_exception:
                     self.stop_providing_bars_for_symbol(symbol, str(e))
                 else:
                     self.logger.write('Error from Oanda API call, recover attempt: {}, error: {}'.format(
-                        self.attempts_to_recover_after_oanda_exception, str(e)))
+                        self.attempts_to_recover_after_oanda_exception[symbol], str(e)))
 
             if newest_closed_bar is None:
                 time.sleep(self.reload_last_candle_delay_seconds)

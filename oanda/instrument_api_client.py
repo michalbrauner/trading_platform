@@ -13,7 +13,7 @@ except ImportError:
 
 class InstrumentApiClient:
 
-    WAIT_BETWEEN_REQUESTS_SECONDS = 1
+    WAIT_BETWEEN_REQUESTS_SECONDS = 5
 
     def __init__(self, access_token):
         self.access_token = access_token
