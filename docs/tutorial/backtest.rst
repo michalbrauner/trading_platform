@@ -4,11 +4,11 @@ Test strategy on historical data
 When you have a new strategy, you should test it on historical data. To do this, you need to create new
 python script (for example `backtest_my_strategy.py`). See `backtest_eurusd_daily_forecast.py` as an example.
 
-The important part is to fetch all arguments from command line. To do this, you need to define methods
+The important part is to fetch all arguments from the command line. To do this, you need to define methods
 :code:`create_argument_parser` and :code:`get_strategy_params` in your strategy.
 These define list of arguments strategy uses.
 
-Then you need to create instance of :code:`Configuration` class with
+Then you need to create an instance of :code:`Configuration` class with
 :code:`execution_handler_name=SimulatedExecutionHandler` and set directory to historical data.
 
 .. code:: python
@@ -17,7 +17,7 @@ Then you need to create instance of :code:`Configuration` class with
                                   execution_handler_name=SimulatedExecutionHandler)
     configuration.set_option(Configuration.OPTION_CSV_DIR, args_namespace.data_directory)
 
-Finally, you can create instance of class :code:`Backtest` and run:
+Finally, you can create an instance of the class :code:`Backtest` and run:
 
 .. code:: python
 

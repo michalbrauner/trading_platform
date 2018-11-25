@@ -1,7 +1,7 @@
 Create new strategy
 ===================
 
-All strategies are stored in directory :code:`strategies`. A strategy is encapsulated by one class that extends :code:`strategies.strategy.Strategy`.
+All strategies are stored in the directory :code:`strategies`. A strategy is encapsulated by one class that extends :code:`strategies.strategy.Strategy`.
 
 You have to define method :code:`calculate_signals(self, event: Event)`. You should check this event for type :code:`MARKET`
 which represents that something new came from the market.
@@ -11,14 +11,15 @@ which represents that something new came from the market.
     if event.type == 'MARKET':
         symbol = event.symbol
 
-To get last prices you can use one of these methods:
+To get the last prices you can use one of these methods:
 
 .. code:: python
 
     last_price = self.bars.get_latest_bar_value(symbol, 'close_bid')
     last_three_prices = self.bars.get_latest_bars_values(symbol, 'close_bid', 3)
 
-When your strategy calculates that new position should be opened, you need to create new event :code:`SignalEvent` and insert it into queue:
+When your strategy calculates that new position should be opened, you need to create a new event :code:`SignalEvent`
+and insert it into the queue:
 
 .. code:: python
 
