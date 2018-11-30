@@ -13,7 +13,7 @@ except ImportError:
 
 class InstrumentApiClient:
 
-    WAIT_BETWEEN_REQUESTS_SECONDS = 5
+    WAIT_BETWEEN_REQUESTS_SECONDS = 10
 
     def __init__(self, access_token):
         self.access_token = access_token
@@ -84,4 +84,4 @@ class InstrumentApiClient:
 
         except Exception as e:
             s.close()
-            raise Exception('Caught exception when connecting to API\n' + str(e))
+            raise Exception('Caught exception when connecting to API\n' + str(e)) from e

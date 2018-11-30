@@ -24,7 +24,7 @@ class OandaBarsProviderApi(BarsProvider):
         self.queues = dict((symbol, queue.Queue()) for (symbol) in symbols)
         self.last_bar_datetimes = dict((symbol, None) for (symbol) in symbols)
         self.reload_last_candle_delay_seconds = 2 * 60
-        self.max_attempts_to_recover_after_oanda_exception = 5
+        self.max_attempts_to_recover_after_error = 20
 
         self.attempts_to_recover_after_oanda_exception = dict((symbol, 0) for (symbol) in symbols)
 
@@ -55,7 +55,7 @@ class OandaBarsProviderApi(BarsProvider):
                                                                    last_datetime)
 
                 if 'errorMessage' in last_bars:
-                    self.stop_providing_bars_for_symbol(symbol, last_bars['errorMessage'])
+                    raise Exception(last_bars['errorMessage'])
 
                 for candle in last_bars['candles']:
                     if candle['complete']:
@@ -65,11 +65,11 @@ class OandaBarsProviderApi(BarsProvider):
                 self.attempts_to_recover_after_oanda_exception[symbol] += 1
 
                 current_number_of_attempts = self.attempts_to_recover_after_oanda_exception[symbol]
-                if current_number_of_attempts > self.max_attempts_to_recover_after_oanda_exception:
+                if current_number_of_attempts > self.max_attempts_to_recover_after_error:
                     self.stop_providing_bars_for_symbol(symbol, str(e))
                 else:
-                    self.logger.write('Error from Oanda API call, recover attempt: {}, error: {}'.format(
-                        self.attempts_to_recover_after_oanda_exception[symbol], str(e)))
+                    self.logger.write('Error from Oanda API call, recover attempt: {}, symbol: {}, error: {}'.format(
+                        self.attempts_to_recover_after_oanda_exception[symbol], symbol, str(e)))
 
             if newest_closed_bar is None:
                 time.sleep(self.reload_last_candle_delay_seconds)
@@ -93,7 +93,7 @@ class OandaBarsProviderApi(BarsProvider):
     def stop_providing_bars_for_symbol(self, symbol: str, message: str):
         self.queues[symbol].put_nowait({
             'action': 'exit',
-            'message': 'Error from Oanda API call, error: {}'.format(message)
+            'message': 'Error from Oanda API call, symbol: {}, error: {}'.format(symbol, message)
         })
 
         raise StopIteration(message)
