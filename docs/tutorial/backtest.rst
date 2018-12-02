@@ -40,3 +40,5 @@ There is an example of historical data CSV:
     2005-01-01T22:00:00.000000Z;1.3555;1.3565;1.3565;1.3575;1.3536;1.3546;1.35475;1.35575;303
     2005-01-02T22:00:00.000000Z;1.35485;1.35585;1.35785;1.35845;1.3384;1.3387;1.3464;1.3466;38042
 
+To get this CSV from Oanda data source, you can use script :code:`download_data.py`
+from https://github.com/michalbrauner/oanda-python
