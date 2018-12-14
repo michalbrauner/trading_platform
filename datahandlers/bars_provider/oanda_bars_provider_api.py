@@ -61,6 +61,8 @@ class OandaBarsProviderApi(BarsProvider):
                     if candle['complete']:
                         newest_closed_bar = candle
 
+                self.attempts_to_recover_after_oanda_exception[symbol] = 0
+
             except Exception as e:
                 self.attempts_to_recover_after_oanda_exception[symbol] += 1
 
