@@ -4,6 +4,7 @@ from strategies.patterns.trade_type import TradeType
 
 
 class PinBarPattern(Pattern):
+    # ToDo zmenit poradi argumentu - OHLC
     def __init__(self, open_price: float, close_price: float, high_price: float, low_price: float):
         self.open_price = open_price
         self.close_price = close_price

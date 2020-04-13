@@ -1,5 +1,6 @@
 from datetime import datetime
 import time
+from typing import Tuple
 
 
 class TimeFrame(object):
@@ -19,14 +20,13 @@ class TimeFrame(object):
         TIME_FRAME_H4: 60 * 60 * 4,
     }
 
-    def __init__(self, time_frame):
+    def __init__(self, time_frame) -> None:
         self.time_frame = time_frame
 
     def as_string(self) -> str:
         return self.time_frame
 
-    def get_time_frame_border(self, time_to_analyze):
-        # type: (datetime) -> tuple[datetime, datetime]
+    def get_time_frame_border(self, time_to_analyze: datetime) -> Tuple[datetime, datetime]:
         datetime_in_seconds = int(time.mktime(time_to_analyze.timetuple()))
 
         number_of_seconds_in_time_frame = self.NUMBER_OF_SECONDS_IN_TIME_FRAMES[self.time_frame]

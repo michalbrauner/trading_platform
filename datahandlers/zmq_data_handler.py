@@ -1,0 +1,198 @@
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor
+from events.market_event import MarketEvent
+from dateutil import parser
+from oanda.instrument_api_client import InstrumentApiClient
+import asyncio
+from typing import Dict
+from typing import Optional
+from datahandlers.data_handler import DataHandler
+from datahandlers.bars_provider.bars_provider import BarsProvider
+import queue
+
+
+class ZmqDataHandler(DataHandler):
+
+    def __init__(self, events_per_symbol: Dict[str, queue.Queue], symbol_list: list, bars_provider: BarsProvider,
+                 time_frame: str) -> None:
+
+        self.events_per_symbol = events_per_symbol
+        self.symbol_list = symbol_list
+
+        self.symbol_data = {}
+        self.symbol_position_info = {}
+        self.latest_symbol_data = {}
+        self.continue_backtest_per_symbols = dict(((symbol, True) for (symbol) in self.symbol_list))
+        self.error_message = None
+        self.time_frame = time_frame
+        self.bars_provider = bars_provider
+        self.providing_bars_loop = None
+
+    def start_providing_bars(self) -> None:
+        self.providing_bars_loop = asyncio.new_event_loop()
+        executor = ThreadPoolExecutor(max_workers=1)
+
+        self.providing_bars_loop.run_in_executor(executor, self.bars_provider.start_providing_bars)
+
+    def get_symbol_list(self) -> list:
+        return self.symbol_list
+
+    def backtest_should_continue(self, symbol: str) -> bool:
+        return self.continue_backtest_per_symbols[symbol]
+
+    def _get_new_bar(self, symbol):
+        if self.providing_bars_loop is None:
+            self.start_providing_bars()
+
+        symbol_data_queue = self.bars_provider.get_queue(symbol)
+
+        while True:
+            symbol_data = symbol_data_queue.get(True)
+
+            if 'action' in symbol_data:
+                if symbol_data['action'] == 'exit':
+                    raise StopIteration(symbol_data['message'])
+            else:
+                yield symbol_data
+
+    @staticmethod
+    def get_price_datetime(datetime_as_string):
+        price_datetime = parser.parse(datetime_as_string)
+        price_datetime = price_datetime.replace(tzinfo=None)
+        price_datetime = price_datetime.replace(microsecond=0)
+
+        return price_datetime
+
+    @staticmethod
+    def create_bar_data(opened_bar_starts_at, price_ask_close, price_ask_high, price_ask_low, price_ask_open,
+                        price_bid_close, price_bid_high, price_bid_low, price_bid_open):
+        return {
+            'datetime': opened_bar_starts_at,
+            'open_bid': float(price_bid_open),
+            'open_ask': float(price_ask_open),
+            'high_bid': float(price_bid_high),
+            'high_ask': float(price_ask_high),
+            'low_bid': float(price_bid_low),
+            'low_ask': float(price_ask_low),
+            'close_bid': float(price_bid_close),
+            'close_ask': float(price_ask_close),
+            'volume': 0
+        }
+
+    def append_new_price_data(self, symbol, data) -> None:
+        if symbol not in self.symbol_data:
+            self.symbol_data[symbol] = [data]
+            self.symbol_position_info[symbol] = dict(
+                number_of_items=1,
+                position=1
+            )
+        else:
+            self.symbol_data[symbol].append(data)
+
+            self.symbol_position_info[symbol]['number_of_items'] = \
+                self.symbol_position_info[symbol]['number_of_items'] + 1
+
+            self.symbol_position_info[symbol]['position'] = \
+                self.symbol_position_info[symbol]['position'] + 1
+
+        if symbol not in self.latest_symbol_data:
+            self.latest_symbol_data[symbol] = []
+
+        self.latest_symbol_data[symbol].append(data)
+
+    def has_some_bars(self, symbol: str) -> bool:
+        return symbol in self.latest_symbol_data and len(self.latest_symbol_data[symbol]) > 0
+
+    def get_latest_bar(self, symbol: str):
+        """
+        Returns the last bar from the latest_symbol list.
+        """
+        try:
+            bars_list = self.latest_symbol_data[symbol]
+        except KeyError:
+            print("That symbol is not available in the historical data set.")
+            raise
+        else:
+            return bars_list[-1]
+
+    def get_latest_bars(self, symbol, N=1):
+        """
+        Returns the last N bars from the latest_symbol list,
+        or N-k if less available.
+        """
+        try:
+            bars_list = self.latest_symbol_data[symbol]
+        except KeyError:
+            print("That symbol is not available in the historical data set.")
+            raise
+        else:
+            return bars_list[-N:]
+
+    def get_latest_bar_datetime(self, symbol):
+        """
+        Returns a Python datetime object for the last bar.
+        """
+        try:
+            bars_list = self.latest_symbol_data[symbol]
+        except KeyError:
+            print("That symbol is not available in the historical data set.")
+            raise
+        else:
+            return bars_list[-1]['datetime']
+
+    def get_latest_bar_value(self, symbol, val_type):
+        """
+        Returns one of the Open, High, Low, Close, Volume or OI
+        values from the pandas Bar series object.
+        """
+        try:
+            bars_list = self.latest_symbol_data[symbol]
+        except KeyError:
+            print("That symbol is not available in the historical data set.")
+            raise
+        else:
+            return bars_list[-1][val_type]
+
+    def get_latest_bars_values(self, symbol, val_type, N=1):
+        """
+        Returns the last N bar values from the
+        latest_symbol list, or N-k if less available.
+        """
+        try:
+            bars_list = self.get_latest_bars(symbol, N)
+        except KeyError:
+            print("That symbol is not available in the historical data set.")
+            raise
+        else:
+            return np.array([b[val_type] for b in bars_list])
+
+    def update_bars(self, symbol: str):
+        """
+        Pushes the latest bar to the latest_symbol_data structure
+        for symbol
+        """
+        try:
+            bar = next(self._get_new_bar(symbol))
+        except StopIteration as e:
+            self.continue_backtest_per_symbols[symbol] = False
+            self.error_message = e.value
+        else:
+            if bar is not None:
+                self.append_new_price_data(symbol, bar)
+                self.events_per_symbol[symbol].put(MarketEvent(symbol))
+
+    def get_error_message(self) -> Optional[str]:
+        return self.error_message
+
+    def get_position_in_percentage(self):
+        return 0
+
+    def get_number_of_bars(self, symbol):
+        """
+
+        :type symbol: str
+        """
+        if symbol in self.symbol_data:
+            return len(self.symbol_data[symbol])
+        else:
+            return 0

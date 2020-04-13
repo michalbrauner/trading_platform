@@ -12,11 +12,7 @@ from strategies.strategy import Strategy
 import os
 from core.worker import Worker
 import time
-
-try:
-    import Queue as queue
-except ImportError:
-    import queue
+import queue
 
 
 class Trading(Worker):
