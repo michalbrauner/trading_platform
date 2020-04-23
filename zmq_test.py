@@ -6,6 +6,7 @@ from datahandlers.data_handler_factory import DataHandlerFactory
 from datahandlers.zmq_data_handler import ZmqDataHandler
 from executionhandlers.oanda_execution import OandaExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
+from executionhandlers.simulated_execution import SimulatedExecutionHandler
 from strategies.no_trading_strategy import NoTradingStrategy
 from positionsizehandlers.fixed_position_size import FixedPositionSize
 from loggers.text_logger import TextLogger
@@ -24,7 +25,7 @@ def main():
 
     strategy_params = strategy.get_strategy_params(args_namespace)
 
-    configuration = Configuration(data_handler_name=ZmqDataHandler, execution_handler_name=OandaExecutionHandler)
+    configuration = Configuration(data_handler_name=ZmqDataHandler, execution_handler_name=SimulatedExecutionHandler)
     configuration.set_option(Configuration.OPTION_TIMEFRAME, args_namespace.time_frame)
 
     trading = Trading(args_namespace.output_directory, list(args_namespace.symbols), 0,
