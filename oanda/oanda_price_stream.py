@@ -3,7 +3,7 @@ from dateutil import parser
 import requests
 import json
 import threading
-from typing import List
+from typing import List, Iterable
 from datahandlers.bars_provider.price_stream import PriceStream
 from datahandlers.bars_provider.price_stream_price_item import PriceStreamPriceItem
 
@@ -53,7 +53,7 @@ class OandaPriceStream(PriceStream):
     def is_connected(self):
         return self.connected
 
-    def get_price(self):
+    def get_price(self) -> Iterable[PriceStreamPriceItem]:
 
         if self.response is None:
             raise Exception('Stream is not connected')

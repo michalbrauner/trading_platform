@@ -23,3 +23,11 @@ class PriceStreamPriceItem(object):
     @property
     def price_bid(self) -> float:
         return self._price_bid
+
+    def as_dictionary(self) -> dict:
+        return {
+            'instrument': self.symbol,
+            'datetime': self.price_datetime,
+            'ask': self.price_ask,
+            'bid': self.price_bid
+        }

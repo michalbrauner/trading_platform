@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Iterable
 
 from datahandlers.bars_provider.price_stream_price_item import PriceStreamPriceItem
 
@@ -20,5 +20,5 @@ class PriceStream(object):
         raise NotImplementedError("Should implement is_connected()")
 
     @abstractmethod
-    def get_price(self) -> PriceStreamPriceItem:
+    def get_price(self) -> Iterable[PriceStreamPriceItem]:
         raise NotImplementedError("Should implement get_price()")

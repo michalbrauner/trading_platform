@@ -1,6 +1,7 @@
 from datetime import datetime
 import time
 from typing import Tuple
+import pytz
 
 
 class TimeFrame(object):
@@ -35,8 +36,8 @@ class TimeFrame(object):
         border_higher_seconds = border_lower_seconds + number_of_seconds_in_time_frame - 1
 
         return (
-            datetime.fromtimestamp(border_lower_seconds),
-            datetime.fromtimestamp(border_higher_seconds),
+            datetime.fromtimestamp(border_lower_seconds, tz=time_to_analyze.tzinfo),
+            datetime.fromtimestamp(border_higher_seconds, tz=time_to_analyze.tzinfo),
         )
 
     @staticmethod

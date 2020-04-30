@@ -68,7 +68,7 @@ class OandaBarsProviderStream(BarsProvider):
                 self.opened_bars_starts_at[symbol] = bar_borders[0]
 
             if self.opened_bars_finishes_at[symbol] >= price_datetime or 'datetime' not in self.opened_bars[symbol]:
-                new_price_data = pd.DataFrame(price, index=[price_datetime])
+                new_price_data = pd.DataFrame(price.as_dictionary(), index=[price_datetime])
                 self.opened_bars[symbol] = self.opened_bars[symbol].append(new_price_data)
             else:
                 price_bid_open = float(self.opened_bars[symbol]['bid'][0])
