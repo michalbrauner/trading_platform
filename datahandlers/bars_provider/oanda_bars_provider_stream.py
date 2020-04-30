@@ -1,4 +1,4 @@
-from oanda.stream import Stream as OandaPriceStream
+from oanda.oanda_price_stream import OandaPriceStream
 from timeframe.timeframe import TimeFrame
 import pandas as pd
 from typing import List
@@ -58,9 +58,9 @@ class OandaBarsProviderStream(BarsProvider):
 
     def handle_prices_stream(self, stream: OandaPriceStream):
         for price in stream.get_price():
-            symbol = price['instrument']
+            symbol = price.symbol
 
-            price_datetime = self.get_price_datetime(price['datetime'])
+            price_datetime = price.price_datetime
             bar_borders = self.time_frame.get_time_frame_border(price_datetime)
 
             if self.opened_bars_finishes_at[symbol] is None:
@@ -68,7 +68,7 @@ class OandaBarsProviderStream(BarsProvider):
                 self.opened_bars_starts_at[symbol] = bar_borders[0]
 
             if self.opened_bars_finishes_at[symbol] >= price_datetime or 'datetime' not in self.opened_bars[symbol]:
-                new_price_data = pd.DataFrame(price, index=[price['datetime']])
+                new_price_data = pd.DataFrame(price, index=[price_datetime])
                 self.opened_bars[symbol] = self.opened_bars[symbol].append(new_price_data)
             else:
                 price_bid_open = float(self.opened_bars[symbol]['bid'][0])

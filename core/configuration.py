@@ -5,6 +5,7 @@ class Configuration(object):
     OPTION_ACCESS_TOKEN = 'access_token'
     OPTION_TIMEFRAME = 'timeframe'
     OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY = 'number_of_bars_preload_from_history'
+    OPTION_OANDA_USES_STREAM = 'oanda_uses_stream'
 
     def __init__(self, data_handler_name: object, execution_handler_name: object):
         self.data_handler_name = data_handler_name
@@ -16,4 +17,10 @@ class Configuration(object):
         self.options[option] = value
 
     def get_option(self, option: str) -> str:
+        return self.options[option]
+
+    def set_bool_option(self, option: str, value: bool):
+        self.options[option] = value
+
+    def get_bool_option(self, option: str) -> bool:
         return self.options[option]

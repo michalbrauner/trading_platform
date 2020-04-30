@@ -1,3 +1,4 @@
+from datahandlers.bars_provider.oanda_bars_provider_stream import OandaBarsProviderStream
 from datahandlers.bars_provider.zmq_bars_provider_from_tick_data import ZmqBarsProviderFromTickData
 from datahandlers.historic_csv_data_handler import HistoricCSVDataHandler
 from datahandlers.oanda_data_handler import OandaDataHandler
@@ -7,6 +8,7 @@ from core.configuration import Configuration
 from oanda.instrument_api_client import InstrumentApiClient
 from typing import Dict
 from datahandlers.bars_provider.oanda_bars_provider_api import OandaBarsProviderApi
+from oanda.oanda_price_stream import OandaPriceStream
 from timeframe.timeframe import TimeFrame
 from loggers.logger import Logger
 import queue
@@ -26,12 +28,24 @@ class DataHandlerFactory:
             bars_from_history = Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY
             access_token = Configuration.OPTION_ACCESS_TOKEN
             time_frame = Configuration.OPTION_TIMEFRAME
+            account_id = Configuration.OPTION_ACCOUNT_ID
 
-            return DataHandlerFactory.create_oanda_data_handler(events_per_symbol, symbol_list,
-                                                                configuration.get_option(access_token),
-                                                                configuration.get_option(time_frame),
-                                                                int(configuration.get_option(bars_from_history)),
-                                                                logger)
+            use_stream = configuration.get_bool_option(Configuration.OPTION_OANDA_USES_STREAM)
+
+            if use_stream:
+                return DataHandlerFactory.create_oanda_price_stream_data_handler(events_per_symbol, symbol_list,
+                                                                                 configuration.get_option(account_id),
+                                                                                 configuration.get_option(access_token),
+                                                                                 configuration.get_option(time_frame),
+                                                                                 int(configuration.get_option(
+                                                                                     bars_from_history)),
+                                                                                 )
+            else:
+                return DataHandlerFactory.create_oanda_data_handler(events_per_symbol, symbol_list,
+                                                                    configuration.get_option(access_token),
+                                                                    configuration.get_option(time_frame),
+                                                                    int(configuration.get_option(bars_from_history)),
+                                                                    logger)
 
         if configuration.data_handler_name == ZmqDataHandler:
             time_frame = Configuration.OPTION_TIMEFRAME
@@ -54,6 +68,20 @@ class DataHandlerFactory:
         instrument_api_client.start_process_requests()
 
         bars_provider = OandaBarsProviderApi(symbol_list, instrument_api_client, TimeFrame(time_frame), logger)
+
+        return OandaDataHandler(events_per_symbol, symbol_list, bars_provider, instrument_api_client, time_frame,
+                                number_of_bars_preload_from_history)
+
+    @staticmethod
+    def create_oanda_price_stream_data_handler(events_per_symbol: Dict[str, queue.Queue], symbol_list: list,
+                                               account_id: str, access_token: str, time_frame: str,
+                                               number_of_bars_preload_from_history: int) -> DataHandler:
+        instrument_api_client = InstrumentApiClient(access_token)
+        instrument_api_client.start_process_requests()
+
+        stream = OandaPriceStream(account_id, access_token, symbol_list)
+
+        bars_provider = OandaBarsProviderStream([stream], symbol_list, TimeFrame(time_frame))
 
         return OandaDataHandler(events_per_symbol, symbol_list, bars_provider, instrument_api_client, time_frame,
                                 number_of_bars_preload_from_history)

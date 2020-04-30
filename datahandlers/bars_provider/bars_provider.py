@@ -1,11 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from dateutil import parser
-
-try:
-    import Queue as queue
-except ImportError:
-    import queue
+import queue
 
 
 class BarsProvider(object):

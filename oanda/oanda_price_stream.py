@@ -1,10 +1,14 @@
+from datetime import datetime
+from dateutil import parser
 import requests
 import json
 import threading
 from typing import List
+from datahandlers.bars_provider.price_stream import PriceStream
+from datahandlers.bars_provider.price_stream_price_item import PriceStreamPriceItem
 
 
-class Stream:
+class OandaPriceStream(PriceStream):
 
     def __init__(self, account_id, access_token, instruments):
         self.access_token = access_token
@@ -38,9 +42,9 @@ class Stream:
                 if self.response.status_code == 200:
                     self.connected = True
 
-            except Exception as e:
+            except Exception as exception:
                 s.close()
-                raise Exception('Caught exception when connecting to stream\n' + str(e))
+                raise Exception('Caught exception when connecting to stream\n' + str(exception))
             finally:
                 self.lock.release()
         else:
@@ -71,7 +75,18 @@ class Stream:
                     raise Exception('Caught exception when converting message into json\n' + str(e))
 
                 if 'instrument' in msg:
-                    ask_price = msg['asks'][0]['price']
-                    bid_price = msg['bids'][0]['price']
+                    ask_price = float(msg['asks'][0]['price'])
+                    bid_price = float(msg['bids'][0]['price'])
 
-                    yield {'instrument': msg['instrument'], 'datetime': msg['time'], 'ask': ask_price, 'bid': bid_price}
+                    price_datetime = OandaPriceStream.get_price_datetime(msg['time'])
+
+                    stream_price = PriceStreamPriceItem(msg['instrument'], price_datetime, ask_price, bid_price)
+
+                    yield stream_price
+
+    @staticmethod
+    def get_price_datetime(datetime_as_string: str) -> datetime:
+        price_datetime = parser.parse(datetime_as_string)
+        price_datetime = price_datetime.replace(microsecond=0)
+
+        return price_datetime

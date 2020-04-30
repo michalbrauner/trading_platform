@@ -1,8 +1,11 @@
+import os
+
 from core.portfolio import Portfolio
 
 from core.trading import Trading
 from core.configuration import Configuration
 from datahandlers.data_handler_factory import DataHandlerFactory
+from datahandlers.oanda_data_handler import OandaDataHandler
 from datahandlers.zmq_data_handler import ZmqDataHandler
 from executionhandlers.oanda_execution import OandaExecutionHandler
 from executionhandlers.execution_handler_factory import ExecutionHandlerFactory
@@ -25,8 +28,13 @@ def main():
 
     strategy_params = strategy.get_strategy_params(args_namespace)
 
-    configuration = Configuration(data_handler_name=ZmqDataHandler, execution_handler_name=SimulatedExecutionHandler)
+    configuration = Configuration(data_handler_name=OandaDataHandler, execution_handler_name=SimulatedExecutionHandler)
     configuration.set_option(Configuration.OPTION_TIMEFRAME, args_namespace.time_frame)
+
+    configuration.set_option(Configuration.OPTION_ACCOUNT_ID, os.environ.get('OANDA_API_ACCOUNT_ID'))
+    configuration.set_option(Configuration.OPTION_ACCESS_TOKEN, os.environ.get('OANDA_API_ACCESS_TOKEN'))
+    configuration.set_bool_option(Configuration.OPTION_OANDA_USES_STREAM, True)
+    configuration.set_option(Configuration.OPTION_NUMBER_OF_BARS_PRELOAD_FROM_HISTORY, '0')
 
     trading = Trading(args_namespace.output_directory, list(args_namespace.symbols), 0,
                       configuration, DataHandlerFactory(), ExecutionHandlerFactory(), Portfolio, strategy,

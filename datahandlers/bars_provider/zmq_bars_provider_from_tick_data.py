@@ -1,9 +1,6 @@
 import string
 import time
-
-from datahandlers.bars_provider.zmq import DWX_ZeroMQ_Connector_v2_0_1_RC8
 from loggers.logger import Logger
-from oanda.stream import Stream as OandaPriceStream
 from oanda.symbol_name_converter import SymbolNameConverter
 from timeframe.timeframe import TimeFrame
 import pandas as pd
@@ -12,6 +9,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from datahandlers.bars_provider.bars_provider import BarsProvider
 import queue
+
+from zeromq import DWX_ZeroMQ_Connector_v2_0_1_RC8
 
 
 class ZmqBarsProviderFromTickData(BarsProvider):
