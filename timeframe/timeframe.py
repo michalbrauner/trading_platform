@@ -28,7 +28,7 @@ class TimeFrame(object):
         return self.time_frame
 
     def get_time_frame_border(self, time_to_analyze: datetime) -> Tuple[datetime, datetime]:
-        datetime_in_seconds = int(time.mktime(time_to_analyze.timetuple()))
+        datetime_in_seconds = int(time_to_analyze.timestamp())
 
         number_of_seconds_in_time_frame = self.NUMBER_OF_SECONDS_IN_TIME_FRAMES[self.time_frame]
 
